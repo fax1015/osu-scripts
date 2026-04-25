@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>osu! scripts</title>
+  <meta name="description" content="Guest-difficulty BBCode and oldest scores from public osu! feeds.">
+  <meta name="app-repo" content="">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="nav-bar">
+    <div class="nav-outer">
+      <div class="nav-outer-backdrop" aria-hidden="true"></div>
+      <div class="nav-inner">
+        <a href="#home" class="nav-inner-left" aria-label="osu! scripts home">
+          <p class="pink">osu!</p>
+          <p>scripts</p>
+        </a>
+
+        <button type="button" id="nav-burger" class="nav-burger" aria-expanded="false" aria-controls="nav-anchors"
+          aria-label="Open sections menu">
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+        </button>
+
+        <nav id="nav-anchors" class="nav-anchors" aria-label="Page sections">
+          <a href="#guest-difficulties">Guest maps</a>
+          <a href="#oldest-scores">Oldest scores</a>
+          <a href="#setup">Account</a>
+        </nav>
+
+        <div class="nav-actions">
+          <div id="nav-auth-guest" class="nav-auth-guest">
+            <button type="button" id="login-osu" class="btn-login-osu">login with osu!</button>
+          </div>
+          <div id="nav-auth-user" class="nav-auth-user" hidden>
+            <div class="nav-account-dropdown">
+              <button type="button" id="profile-menu-trigger" class="btn-profile-trigger" aria-expanded="false"
+                aria-haspopup="menu" aria-controls="profile-menu-panel">
+                <img id="account-avatar" class="account-avatar" alt="" width="22" height="22" hidden>
+                <span id="account-label" class="profile-trigger-label"></span>
+                <svg class="profile-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M2.5 4.25L6 7.75l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.35"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div id="profile-menu-panel" class="profile-menu-panel" role="menu" aria-hidden="true">
+                <p id="token-status" class="token-status profile-menu-status" role="status">Checking login…</p>
+                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">Save settings</button>
+                <button type="button" id="logout-osu" class="profile-menu-item" role="menuitem">Log out</button>
+                <button type="button" id="close-app" class="profile-menu-item" role="menuitem" hidden>Close app</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="main-content">
+      <section id="home" class="hero" aria-label="Introduction">
+        <div class="hero-left">
+          <h1 class="title">useful <span class="title-aside">(maybe?)</span> scripts for
+            <span class="wave-text">
+              <span class="wave-char">o</span>
+              <span class="wave-char">s</span>
+              <span class="wave-char">u</span>
+              <span class="wave-char">!</span>
+            </span>
+          </h1>
+          <p class="hero-subtitle">
+            not much here yet, still a work in progress
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#guest-difficulties">Guest BBCode</a>
+            <a class="btn btn-secondary" href="#oldest-scores">Oldest scores</a>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="map-preview-popup is-open" id="mapPreviewPopup">
+            <div class="map-preview-canvas-wrap">
+              <canvas id="mapPreviewCanvas" class="map-preview-canvas" width="1024" height="768"></canvas>
+              <a class="map-preview-track-link" id="mapPreviewTrackLink" href="https://osu.ppy.sh" target="_blank" rel="noopener noreferrer">
+                <p class="map-preview-track-title" id="mapPreviewTrackTitle"></p>
+                <p class="map-preview-track-diff" id="mapPreviewTrackDiff"></p>
+                <p class="map-preview-track-mapper" id="mapPreviewTrackMapper"></p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="guest-difficulties" class="page-section" aria-labelledby="guest-heading">
+        <div class="section-intro">
+          <h2 id="guest-heading" class="section-title">Guest BBCode</h2>
+          <p class="section-lead">
+            Guest maps you mapped on other people’s sets, merged into one BBCode block. Without OAuth, you only get
+            ranked and loved guest sets.
+          </p>
+        </div>
+
+        <div class="panel">
+          <form id="guest-form" class="tool-form">
+            <div class="form-grid">
+              <div class="field span-2">
+                <label for="guest-target">Profile, username, or user ID</label>
+                <input id="guest-target" name="target" type="text" autocomplete="off" placeholder="https://osu.ppy.sh/users/124493">
+              </div>
+              <div class="field">
+                <label for="guest-output">Output file</label>
+                <input id="guest-output" name="output" type="text" autocomplete="off" placeholder="guest-difficulties.txt">
+              </div>
+              <div class="field">
+                <label for="guest-sort">Sort</label>
+                <select id="guest-sort" name="sort">
+                  <option value="beatmap-id">Beatmap ID</option>
+                  <option value="difficulty-updated">Difficulty updated</option>
+                  <option value="set-date">Set date</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="guest-page-size">Page size</label>
+                <input id="guest-page-size" name="pageSize" type="number" min="1" step="1">
+              </div>
+              <div class="field">
+                <label for="guest-concurrency">Concurrency</label>
+                <input id="guest-concurrency" name="concurrency" type="number" min="1" step="1">
+              </div>
+              <div class="field span-2">
+                <label for="guest-max-pages">Max pages (0 = no limit)</label>
+                <input id="guest-max-pages" name="maxPages" type="number" min="0" step="1">
+              </div>
+            </div>
+            <fieldset class="field-set">
+              <legend>Modes</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
+                <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
+                <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
+                <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
+              </div>
+            </fieldset>
+            <fieldset class="field-set">
+              <legend>Options</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="checkbox" name="dryRun"> Dry run</label>
+                <label class="chip"><input type="checkbox" name="verbose"> Verbose</label>
+              </div>
+            </fieldset>
+            <div class="form-actions">
+              <button class="btn btn-run" type="submit">Run</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="guest-results" class="results-panel" hidden>
+          <h3 class="results-heading">Results</h3>
+          <div id="guest-results-body" class="results-body"></div>
+          <details class="technical-log">
+            <summary>Technical details</summary>
+            <pre id="guest-results-log" class="log-pre"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section id="oldest-scores" class="page-section" aria-labelledby="oldest-heading">
+        <div class="section-intro">
+          <h2 id="oldest-heading" class="section-title">Oldest scores</h2>
+          <p class="section-lead">
+            Oldest plays we can see from firsts, best, and recent. Not necessarily your real first play if it never
+            appeared there.
+          </p>
+        </div>
+
+        <div class="panel">
+          <form id="oldest-form" class="tool-form">
+            <div class="form-grid">
+              <div class="field span-2">
+                <label for="oldest-target">Profile, username, or user ID</label>
+                <input id="oldest-target" name="target" type="text" autocomplete="off" placeholder="https://osu.ppy.sh/users/124493">
+              </div>
+              <div class="field">
+                <label for="oldest-beatmap">Beatmap ID</label>
+                <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off" placeholder="Optional">
+              </div>
+              <div class="field">
+                <label for="oldest-save-index">Save index</label>
+                <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off" placeholder="scores.json">
+              </div>
+              <div class="field">
+                <label for="oldest-page-size">Page size</label>
+                <input id="oldest-page-size" name="pageSize" type="number" min="1" step="1">
+              </div>
+              <div class="field span-2">
+                <label for="oldest-max-pages">Max pages (0 = no limit)</label>
+                <input id="oldest-max-pages" name="maxPages" type="number" min="0" step="1">
+              </div>
+            </div>
+            <fieldset class="field-set">
+              <legend>Modes</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
+                <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
+                <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
+                <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
+              </div>
+            </fieldset>
+            <fieldset class="field-set">
+              <legend>Feeds</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="checkbox" name="feeds" value="firsts"> firsts</label>
+                <label class="chip"><input type="checkbox" name="feeds" value="best"> best</label>
+                <label class="chip"><input type="checkbox" name="feeds" value="recent"> recent</label>
+              </div>
+            </fieldset>
+            <fieldset class="field-set">
+              <legend>Options</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="checkbox" name="verbose"> Verbose</label>
+              </div>
+            </fieldset>
+            <div class="form-actions">
+              <button class="btn btn-run" type="submit">Run</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="oldest-results" class="results-panel" hidden>
+          <h3 class="results-heading">Results</h3>
+          <div id="oldest-results-body" class="results-body"></div>
+          <details class="technical-log">
+            <summary>Technical details</summary>
+            <pre id="oldest-results-log" class="log-pre"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section id="setup" class="page-section" aria-labelledby="setup-heading">
+        <div class="section-intro">
+          <h2 id="setup-heading" class="section-title">Account</h2>
+          <p class="section-lead">
+            OAuth app from osu! — callback URL must match what you see below.
+            <a class="inline-link" href="https://osu.ppy.sh/docs/#oauth" target="_blank" rel="noopener">OAuth docs</a>
+          </p>
+        </div>
+
+        <div id="oauth-panel" class="panel oauth-panel" hidden>
+          <div class="oauth-panel-head">
+            <h3 class="oauth-panel-title">OAuth</h3>
+            <button id="copy-callback" type="button" class="btn btn-secondary btn-sm">Copy callback</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="oauth-client-id">Client ID</label>
+              <input id="oauth-client-id" inputmode="numeric" autocomplete="off" placeholder="12345">
+            </div>
+            <div class="field">
+              <label for="oauth-client-secret">Client Secret</label>
+              <input id="oauth-client-secret" type="password" autocomplete="off" spellcheck="false" placeholder="Leave blank to keep saved">
+            </div>
+            <div class="field span-2">
+              <label for="oauth-callback-url">Callback URL</label>
+              <input id="oauth-callback-url" type="text" readonly>
+            </div>
+          </div>
+        </div>
+
+        <p class="setup-hint">
+          <button type="button" class="link-button" id="show-oauth-setup">Show OAuth fields</button>
+        </p>
+        <div class="account-toolbar">
+          <button type="button" id="save-settings-account" class="btn btn-secondary">Save settings</button>
+          <p id="account-feedback" class="account-feedback" role="status" hidden></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>unaffiliated with osu! or ppy...</p>
+.     <p><a id="footer-repo" class="inline-link" href="#" target="_blank" rel="noopener">repository</a></p>
+    </div>
+  </footer>
+
+  <script src="preview/preview-bundle.js?v=128"></script>
+  <script src="app.js" type="module"></script>
+</body>
+
+</html>

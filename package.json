@@ -1,0 +1,19 @@
+{
+  "name": "osu-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "osu! utility scripts with a web UI — guest difficulty BBCode export and oldest public score finder.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "ui": "node server.mjs",
+    "open": "node server.mjs --open",
+    "dev:vercel": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.27.1"
+  }
+}

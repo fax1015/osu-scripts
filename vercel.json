@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/auth/osu/start", "destination": "/api/auth/osu/start" },
+    { "source": "/auth/osu/callback", "destination": "/api/auth/osu/callback" }
+  ],
+  "functions": {
+    "api/run.mjs": {
+      "maxDuration": 300
+    }
+  }
+}

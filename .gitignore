@@ -1,0 +1,8 @@
+.osu-script-ui-settings.json
+node_modules/
+.vercel
+.env
+.env*.local
+guest-difficulties.txt
+old-gd-list.txt
+*.log
