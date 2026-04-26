@@ -62,14 +62,42 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--nav-bar-offset);
   overflow-x: clip;
+  background: var(--bg-color);
 }
 
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  background: var(--bg-color);
-  /* `hidden` breaks `position: sticky` for descendants; `clip` clips x overflow without that bug */
+  background: transparent;
   overflow-x: clip;
+}
+
+.bg-dashed-circle {
+  position: absolute;
+  width: var(--bg-circle-d);
+  height: var(--bg-circle-d);
+  left: var(--bg-circle-x);
+  top: var(--bg-circle-y);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 0, 0, 0.2);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bg-dashed-circle--small {
+  width: var(--bg-circle-sm-d);
+  height: var(--bg-circle-sm-d);
+  left: var(--bg-circle-sm-x);
+  top: var(--bg-circle-sm-y);
+}
+
+.bg-dashed-circle--xs {
+  width: var(--bg-circle-xs-d);
+  height: var(--bg-circle-xs-d);
+  left: var(--bg-circle-xs-x);
+  top: var(--bg-circle-xs-y);
 }
 
 header.nav-bar {
@@ -85,7 +113,7 @@ header.nav-bar {
 
 main#main {
   position: relative;
-  z-index: 0;
+  z-index: 1;
   padding-top: var(--nav-bar-offset);
 }
 
@@ -444,6 +472,7 @@ h6 {
 
 .btn-secondary {
   background: var(--bg-button);
+  backdrop-filter: blur(24px);
 }
 
 .btn-run-container {
@@ -605,12 +634,65 @@ a.btn:active {
 }
 
 .hero {
+  position: relative;
   margin: 2rem 32px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 64px;
   scroll-margin-top: calc(var(--nav-bar-offset) + 0.5rem);
+  --axis-angle: 75deg;
+  /* Large ring, center past viewport edge (tune to taste) */
+  --bg-circle-d: 190vmin;
+  --bg-circle-x: 66%;
+  --bg-circle-y: 160vh;
+  --bg-circle-sm-d: 52vmin;
+  --bg-circle-sm-x: 13%;
+  --bg-circle-sm-y: 28vh;
+  --bg-circle-xs-d: 28vmin;
+  --bg-circle-xs-x: 30%;
+  --bg-circle-xs-y: 40vh;
+}
+
+/* Clips dashed lines / rings at hero bottom (above .divider); does not clip map preview siblings.
+   Pull left edge to viewport: hero is inside padded/centered main, so inset:0 left a gutter. */
+.hero-bg-decor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: min(0px, calc(50% - 50vw));
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-axis-line {
+  position: absolute;
+  transform-origin: center;
+}
+
+.hero-axis-line--a {
+  left: 35%;
+  top: 60vh;
+  width: 120vmin;
+  height: 1px;
+  background: repeating-linear-gradient(90deg,
+      transparent 0 10px,
+      rgba(72, 255, 0, 0.2) 10px 18px);
+  transform: translate(-50%, -50%) rotate(var(--axis-angle));
+}
+
+.hero-axis-line--b {
+  left: 50%;
+  top: 50vh;
+  width: 250vmin;
+  height: 1px;
+  background: repeating-linear-gradient(90deg,
+      transparent 0 10px,
+      rgba(72, 255, 0, 0.2) 10px 18px);
+  transform: translate(-50%, -50%) rotate(calc(var(--axis-angle) - 60deg));
+  z-index: -1;
 }
 
 .hero-left {
@@ -1439,6 +1521,7 @@ a.btn:active {
   margin-top: 3rem;
   padding: 2rem 16px 2.5rem;
   border-top: 1px solid var(--border-color);
+  backdrop-filter: blur(24px);
 }
 
 .footer-inner {
