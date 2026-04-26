@@ -22,7 +22,7 @@ const STATUS_TAGS = {
 
 function printHelp() {
   console.log(`Usage:
-  node find-osu-guest-difficulties.mjs <osu-profile-url-or-user-id> [options]
+  node cli/find-osu-guest-difficulties.mjs <osu-profile-url-or-user-id> [options]
 
 Options:
   --output=./guest-difficulties.txt   BBCode file to write, or "-" for no file (BBCode only in --json). Default: ${DEFAULT_OUTPUT}

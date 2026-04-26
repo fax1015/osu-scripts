@@ -163,8 +163,8 @@ const processMapContent = (content) => {
     return { metadata, mapData, breaks, durationMs };
 };
 
-/** Repo ships `sample.osu` at site root; root-relative avoids 404 when the page is under `/public/…` */
-const SAMPLE_OSU_URL = '/sample.osu';
+/** `public/sample.osu` is served as `/sample.osu`. */
+const SAMPLE_OSU_URL = "/sample.osu";
 
 const fetchLocalSampleOsu = async () => {
     try {

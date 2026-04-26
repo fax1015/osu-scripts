@@ -25,7 +25,7 @@ const ACCESS_TOKEN = process.env.OSU_ACCESS_TOKEN || "";
 
 function printHelp() {
   console.log(`Usage:
-  node find-oldest-osu-score.mjs <osu-profile-url-or-user-id> [options]
+  node cli/find-oldest-osu-score.mjs <osu-profile-url-or-user-id> [options]
 
 Options:
   --modes=osu,taiko,fruits,mania   Modes to scan. Default: all
@@ -34,6 +34,7 @@ Options:
   --max-pages=0                    Stop after N pages per feed. 0 = no limit
   --save-index=./scores.json       Save the fetched public score index
   --beatmap-id=123456              Find scores for a specific beatmap
+  --result-count=5                 How many oldest scores to show (1–100). Default: 5
   --verbose                        Print pagination progress
   --json                           Print a single JSON object to stdout (human summary to stderr)
   --help                           Show this help
@@ -41,8 +42,11 @@ Options:
 Notes:
   With OSU_ACCESS_TOKEN set, this script uses osu!'s official API v2.
   Without a token, it falls back to osu!'s public website score endpoints.
+  With a token, --beatmap-id searches only that beatmap (osu! API) for the oldest
+  score. Without a token the beatmap option is ignored and only profile feeds
+  (all visible maps) are used.
   osu! does not expose a complete lifetime score history on the public profile,
-  so the result is the 5 oldest scores discoverable from the public profile feeds.
+  so, by default, the result is the 5 oldest scores (change with --result-count) discoverable from the feeds.
 `);
 }
 
@@ -56,6 +60,7 @@ function parseArgs(argv) {
     modes: [...DEFAULT_MODES],
     feeds: [...DEFAULT_FEEDS],
     beatmapId: null,
+    resultCount: 5,
   };
 
   let target = null;
@@ -106,6 +111,11 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg.startsWith("--result-count=")) {
+      options.resultCount = Number.parseInt(arg.slice("--result-count=".length), 10);
+      continue;
+    }
+
     if (!target) {
       target = arg;
       continue;
@@ -143,6 +153,10 @@ function validateOptions(options) {
 
   if (!Number.isInteger(options.maxPages) || options.maxPages < 0) {
     throw new Error("--max-pages must be 0 or a positive integer");
+  }
+
+  if (!Number.isInteger(options.resultCount) || options.resultCount < 1 || options.resultCount > 100) {
+    throw new Error("--result-count must be an integer from 1 to 100");
   }
 }
 
@@ -426,8 +440,14 @@ async function scanBeatmapFeed(userId, beatmapId, mode, options) {
 
   try {
     const data = await fetchJson(url);
+    const resolvedBeatmapId = Number(beatmapId) || null;
     const scores = (data.scores || [])
-      .map((s) => normalizeScore(s, mode, `beatmap:${beatmapId}`, "api-v2"))
+      .map((s) => {
+        const n = normalizeScore(s, mode, `beatmap:${beatmapId}`, "api-v2");
+        // This endpoint often omits top-level `beatmap_id` or nested `beatmap`; the URL path is authoritative.
+        const id = n.beatmap_id ?? s.beatmap_id ?? s.beatmap?.id ?? resolvedBeatmapId;
+        return { ...n, beatmap_id: id };
+      })
       .filter((score) => scoreMatchesMode(score, mode));
     return {
       mode,
@@ -501,22 +521,68 @@ function formatMods(mods) {
   return mods && mods.length > 0 ? `+${mods.join("")}` : "NM";
 }
 
-function buildStructuredOldestResult(user, options, feedResults, uniqueScores, oldestScores) {
+function isBeatmapApiScan(options) {
+  return Boolean(options.beatmapId) && Boolean(ACCESS_TOKEN);
+}
+
+function displaySongLine(score, beatmapMeta) {
+  const fromScore = [score.artist, score.title].filter(Boolean).join(" - ").trim();
+  if (fromScore) {
+    return fromScore;
+  }
+  if (beatmapMeta) {
+    return [beatmapMeta.artist, beatmapMeta.title].filter(Boolean).join(" - ").trim() || null;
+  }
+  return null;
+}
+
+/** Resolves map title/artist when score payloads omit beatmapset (common on beatmap user-score API). */
+async function fetchBeatmapMetadata(beatmapId) {
+  if (!ACCESS_TOKEN || !beatmapId) {
+    return null;
+  }
+  const id = String(beatmapId).trim();
+  if (!/^\d+$/.test(id)) {
+    return null;
+  }
+  try {
+    const b = await fetchJson(`https://osu.ppy.sh/api/v2/beatmaps/${id}`);
+    const set = b?.beatmapset;
+    return {
+      artist: set?.artist || set?.artist_unicode || null,
+      title: set?.title || set?.title_unicode || null,
+      version: b?.version || null,
+      url: b?.url || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildStructuredOldestResult(user, options, feedResults, uniqueScores, oldestScores, beatmapMeta) {
   const totalFetched = feedResults.reduce((sum, result) => sum + result.scores.length, 0);
   const oldestScore = oldestScores[0] || null;
   const username = oldestScore?.username || "unknown";
-  const disclaimer =
-    "osu! does not expose a full lifetime public score history on profile pages. " +
-    "This result is the oldest score discoverable from the selected public web feeds.";
+  const useBeatmapApi = isBeatmapApiScan(options);
+  const noTokenWithBeatmapId = Boolean(options.beatmapId) && !ACCESS_TOKEN;
+
+  const disclaimer = useBeatmapApi
+    ? "scores come from the osu! API for this user on the requested beatmap, a truly earlier play may be missing"
+    : noTokenWithBeatmapId
+      ? "beatmap filter was skipped: not logged in"
+      : "osu! does not expose a full lifetime public score history on profile pages. " +
+        "the result is the oldest score discoverable from the selected public web feeds.";
 
   const scores = oldestScores.map((score) => {
-    const scoreTitle = [score.artist, score.title].filter(Boolean).join(" - ");
+    const line = displaySongLine(score, beatmapMeta);
+    const version = score.beatmap_version || beatmapMeta?.version || null;
     return {
       ended_at: score.ended_at,
       mode: score.mode || null,
       discovered_in_feeds: score.discovered_in_feeds,
-      beatmapTitle: scoreTitle || null,
-      beatmap_version: score.beatmap_version || null,
+      beatmapTitle: line || (options.beatmapId ? `Beatmap ${options.beatmapId}` : null),
+      beatmap_version: version,
+      beatmap_url: score.beatmap_url || beatmapMeta?.url || null,
       rank: score.rank || null,
       accuracy: typeof score.accuracy === "number" ? score.accuracy : null,
       accuracyFormatted: formatPercent(score.accuracy),
@@ -525,7 +591,6 @@ function buildStructuredOldestResult(user, options, feedResults, uniqueScores, o
       pp: score.pp ?? null,
       max_combo: score.max_combo ?? null,
       score_url: score.score_url || null,
-      beatmap_url: score.beatmap_url || null,
     };
   });
 
@@ -539,7 +604,9 @@ function buildStructuredOldestResult(user, options, feedResults, uniqueScores, o
     },
     scan: {
       modes: options.modes,
-      feeds: options.feeds,
+      feeds: useBeatmapApi ? ["beatmap"] : options.feeds,
+      beatmapId: options.beatmapId || null,
+      resultCount: options.resultCount,
       rawCount: totalFetched,
       uniqueCount: uniqueScores.length,
     },
@@ -549,41 +616,61 @@ function buildStructuredOldestResult(user, options, feedResults, uniqueScores, o
   };
 }
 
-function printSummary(user, options, feedResults, uniqueScores, oldestScores) {
+function printSummary(user, options, feedResults, uniqueScores, oldestScores, beatmapMeta) {
   const totalFetched = feedResults.reduce((sum, result) => sum + result.scores.length, 0);
   const oldestScore = oldestScores[0] || null;
   const username = oldestScore?.username || "unknown";
   const out = options.json ? console.error : console.log;
+  const useBeatmapApi = isBeatmapApiScan(options);
 
   out(`User: ${username} (#${user.userId})`);
   out(`Profile: ${user.resolvedProfileUrl}`);
-  out(`Scanned: ${options.modes.join(", ")} | feeds: ${options.feeds.join(", ")}`);
+  if (useBeatmapApi) {
+    out(
+      `Scanned: ${options.modes.join(", ")} | beatmap ${options.beatmapId} (API: this user's scores on this map)`,
+    );
+  } else {
+    out(`Scanned: ${options.modes.join(", ")} | feeds: ${options.feeds.join(", ")}`);
+  }
   out(`Fetched scores: ${totalFetched} raw / ${uniqueScores.length} unique`);
 
   if (!oldestScore) {
     out("");
-    out("No publicly visible scores were returned by the selected osu! profile feeds.");
+    out(
+      useBeatmapApi
+        ? "No scores for this user were returned for that beatmap (check beatmap id, mode, and that the play exists on this ruleset)."
+        : "No publicly visible scores were returned by the selected osu! profile feeds.",
+    );
     return;
   }
 
   out("");
-  out(`Oldest ${oldestScores.length} publicly discoverable scores:`);
+  out(
+    useBeatmapApi
+      ? `Oldest ${oldestScores.length} score(s) on that beatmap (from API):`
+      : `Oldest ${oldestScores.length} publicly discoverable scores:`,
+  );
 
   oldestScores.forEach((score, index) => {
-    const scoreTitle = [score.artist, score.title].filter(Boolean).join(" - ");
+    const scoreLine = displaySongLine(score, beatmapMeta) || (options.beatmapId ? `beatmap ${options.beatmapId}` : "unknown");
+    const ver = score.beatmap_version || beatmapMeta?.version;
     out("");
     out(`${index + 1}. ${score.ended_at}`);
     out(`   Mode: ${score.mode || "n/a"} | Feed(s): ${score.discovered_in_feeds.join(", ")}`);
-    out(`   Beatmap: ${scoreTitle || "unknown"}${score.beatmap_version ? ` [${score.beatmap_version}]` : ""}`);
+    out(`   Beatmap: ${scoreLine}${ver ? ` [${ver}]` : ""}`);
     out(`   Rank: ${score.rank || "n/a"} | Accuracy: ${formatPercent(score.accuracy)} | Mods: ${formatMods(score.mods)}`);
     out(`   PP: ${score.pp ?? "n/a"} | Combo: ${score.max_combo ?? "n/a"}`);
     out(`   Score Link: ${score.score_url || "n/a"}`);
-    out(`   Beatmap URL: ${score.beatmap_url || "n/a"}`);
+    out(`   Beatmap URL: ${score.beatmap_url || beatmapMeta?.url || "n/a"}`);
   });
 
   out("");
-  out("Important: osu! does not expose a full lifetime public score history on profile pages.");
-  out("This result is the oldest score discoverable from the selected public web feeds.");
+  if (useBeatmapApi) {
+    out("Important: the list is what the API returns for this user on that map; the oldest in that set may not be their true first play.");
+  } else {
+    out("Important: osu! does not expose a full lifetime public score history on profile pages.");
+    out("This result is the oldest score discoverable from the selected public web feeds.");
+  }
 }
 
 async function saveIndex(path, data) {
@@ -600,26 +687,42 @@ async function main() {
   }
 
   const user = await resolveUser(target);
+
+  const useBeatmapApi = isBeatmapApiScan(options);
+  if (options.beatmapId && !ACCESS_TOKEN) {
+    console.error(
+      "Beatmap filter needs an osu! API access token. Without it, this run ignores --beatmap-id. " +
+        "Set OSU_ACCESS_TOKEN, or use the web app while signed in.",
+    );
+  }
+
   const feedTasks = [];
 
   for (const mode of options.modes) {
-    for (const feed of options.feeds) {
-      feedTasks.push(scanFeed(user.userId, mode, feed, options));
-    }
-    if (options.beatmapId) {
+    if (useBeatmapApi) {
       feedTasks.push(scanBeatmapFeed(user.userId, options.beatmapId, mode, options));
+    } else {
+      for (const feed of options.feeds) {
+        feedTasks.push(scanFeed(user.userId, mode, feed, options));
+      }
     }
   }
 
   const feedResults = await Promise.all(feedTasks);
   const uniqueScores = dedupeScores(feedResults);
+  const beatmapMeta =
+    useBeatmapApi && options.beatmapId ? await fetchBeatmapMetadata(options.beatmapId) : null;
   const oldestScore = pickOldestScore(uniqueScores);
-  const oldestScores = pickOldestScores(uniqueScores, 5);
+  const oldestScores = pickOldestScores(uniqueScores, options.resultCount);
 
-  printSummary(user, options, feedResults, uniqueScores, oldestScores);
+  printSummary(user, options, feedResults, uniqueScores, oldestScores, beatmapMeta);
 
   if (options.json) {
-    console.log(JSON.stringify(buildStructuredOldestResult(user, options, feedResults, uniqueScores, oldestScores)));
+    console.log(
+      JSON.stringify(
+        buildStructuredOldestResult(user, options, feedResults, uniqueScores, oldestScores, beatmapMeta),
+      ),
+    );
   }
 
   if (options.saveIndex) {

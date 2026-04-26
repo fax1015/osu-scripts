@@ -32,7 +32,7 @@
     --btn-fill-hover: rgba(255, 255, 255, 0.11);
     --btn-primary-hover-bg: color-mix(in srgb, var(--text-pink) 78%, white);
     /* Lighter than run’s resting tint (0.15 alpha pink) */
-    --btn-run-hover-bg: rgba(255, 160, 200, 0.38);
+    --btn-run-hover-bg: rgba(255, 160, 200, 0.25);
     --link-button-hover-bg: rgba(255, 102, 171, 0.14);
     --profile-expanded-hover-bg: rgba(255, 102, 171, 0.2);
 }
@@ -452,6 +452,7 @@ h6 {
     color: var(--text-main);
     font-weight: 600;
     padding: 10px 22px;
+    width: 100%;
 }
 
 /* Shared motion: cubic + scale hover + snap active */
@@ -1100,10 +1101,18 @@ a.btn:active {
     color: var(--text-main);
     cursor: pointer;
     user-select: none;
+    transition: all 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-.chip:focus-within {
-    box-shadow: 0 0 0 2px rgba(255, 102, 171, 0.35);
+.chip:hover {
+    background: var(--btn-fill-hover);
+    transform: scale(1.03);
+    border-color: var(--text-pink);
+}
+
+.chip:active {
+    transform: scale(0.98);
+    transition: all 0s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 .chip input {
@@ -1170,6 +1179,92 @@ a.btn:active {
 
 .score-list a:hover {
     text-decoration: underline;
+}
+
+/* find oldest — structured result cards */
+.oldest-results-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-light);
+  max-width: 52ch;
+}
+.oldest-scores {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.oldest-score-card {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  align-items: start;
+  column-gap: 0.9rem;
+  margin: 0;
+  padding: 0.85rem 0.9rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+@media (max-width: 640px) {
+  .oldest-score-card {
+    grid-template-columns: 1.25rem 1fr;
+  }
+  .oldest-score-action {
+    grid-column: 1 / -1;
+    margin-top: 0.45rem;
+    justify-content: flex-start;
+  }
+}
+.oldest-score-idx {
+  line-height: 1.2;
+  padding-top: 0.15rem;
+  color: var(--text-pink);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.oldest-score-mono {
+  font-family: "JetBrains Mono", "Consolas", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.oldest-score-time {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin-bottom: 0.2rem;
+}
+.oldest-score-time time {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.oldest-score-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.35;
+}
+.oldest-score-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  line-height: 1.35;
+}
+.oldest-score-subtle-link {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.oldest-score-subtle-link:hover {
+  color: var(--text-pink);
+}
+.oldest-score-action {
+  display: flex;
+  align-items: start;
+  justify-content: flex-end;
 }
 
 .technical-log {
@@ -1737,4 +1832,24 @@ a.btn:active {
   border-bottom: none;
   padding-bottom: 0;
   margin-bottom: 0;
+}
+
+input[type="checkbox"] {
+  outline: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  margin: 0;
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -ms-appearance: none;
+  -o-appearance: none;
+  transition: background-color 0.1s ease;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--text-pink);
 }

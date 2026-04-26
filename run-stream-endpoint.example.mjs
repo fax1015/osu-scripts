@@ -23,8 +23,8 @@ function parseLastJsonLine(stdout) {
 // Replace this with your current /api/run command builder.
 function buildRunCommand({ script, target, settings }) {
   const file = script === "guest"
-    ? "find-osu-guest-difficulties.mjs"
-    : "find-oldest-osu-score.mjs";
+    ? "cli/find-osu-guest-difficulties.mjs"
+    : "cli/find-oldest-osu-score.mjs";
 
   const args = [file, target, "--json"];
 

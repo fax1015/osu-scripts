@@ -192,10 +192,7 @@
               <div class="guest-bbcode-editor-main">
                 <div class="guest-bbcode-intro">
                   <h3 class="guest-bbcode-heading">BBCode template</h3>
-                  <p class="guest-bbcode-lead">Mix forum BBCode with <code>{tokens}</code> where values change; fixed
-                    strings (like the spoiler title in <code>[box=…]</code>) can stay plain text. Use
-                    <code># osu-guest-line</code> plus one line for every repeated guest row; keep
-                    <code>[notice]</code> … <code>[/notice]</code> and <code>[box]</code> … <code>[/box]</code>.</p>
+                  <p class="guest-bbcode-lead">template for the output. you can change the template to your liking, the tokens will be replaced with the actual values.</p>
                 </div>
                 <div class="field guest-bbcode-unified-field">
                   <label for="guest-unified-template" class="visually-hidden">Guest BBCode unified template</label>
@@ -235,19 +232,23 @@
               </div>
               <div class="field">
                 <label for="oldest-beatmap">Beatmap ID</label>
-                <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off" placeholder="Optional">
+                <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off" placeholder="optional; eg: 2778999">
               </div>
-              <div class="field">
+              <div class="field" hidden>
                 <label for="oldest-save-index">Save index</label>
                 <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off" placeholder="scores.json">
               </div>
-              <div class="field">
+              <div class="field" hidden>
                 <label for="oldest-page-size">Page size</label>
                 <input id="oldest-page-size" name="pageSize" type="number" min="1" step="1">
               </div>
-              <div class="field span-2">
+              <div class="field" hidden>
                 <label for="oldest-max-pages">Max pages (0 = no limit)</label>
                 <input id="oldest-max-pages" name="maxPages" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="oldest-result-count">Scores to list</label>
+                <input id="oldest-result-count" name="resultCount" type="number" min="1" max="100" step="1" value="5" title="How many oldest scores to show in results (1–100)">
               </div>
             </div>
             <fieldset class="field-set">

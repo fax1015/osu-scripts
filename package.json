@@ -11,6 +11,7 @@
     "start": "node server.mjs",
     "ui": "node server.mjs",
     "open": "node server.mjs --open",
+    "build:preview": "node scripts/bundle-preview.mjs",
     "dev:vercel": "vercel dev"
   },
   "dependencies": {

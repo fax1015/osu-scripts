@@ -1,6 +1,6 @@
 # osu! scripts
 
-Standalone Node tools for small osu! profile lookups, plus a **web UI** (guest-difficulty BBCode export and oldest public scores). Run the UI locally with Node, or deploy to **Vercel** for a hosted instance.
+Standalone Node tools for small osu! profile lookups, plus a **web UI** (guest-difficulty BBCode export and oldest public scores). Run the UI locally with Node, or deploy to **Vercel** for a hosted instance. The command-line entrypoints for those tools are in **`cli/`**; run them from the repository root (for example `node cli/find-oldest-osu-score.mjs --help`).
 
 ## Web UI — local
 
@@ -18,6 +18,8 @@ npm run open
 ```
 
 starts the server and tries to open a browser tab.
+
+If you edit the beatmap preview under `preview/src/`, run `npm run build:preview` to regenerate `public/preview/preview-bundle.js`.
 
 ### Settings storage (local)
 
@@ -50,7 +52,7 @@ The server binds to **`127.0.0.1`** by default (`HOST` env overrides it).
 
 **Guest exporter on Vercel:** the server runs the script with **`--output=-`**, so the BBCode is returned in the JSON response and can be **downloaded from the browser** instead of being written on the server filesystem.
 
-**Function duration:** `api/run` is configured for up to **300 seconds** in `vercel.json`. Very large guest scans can still hit plan limits; the Hobby tier has shorter defaults than Pro — see [Vercel function limits](https://vercel.com/docs/functions/limitations). For huge exports, run **`node find-osu-guest-difficulties.mjs`** locally.
+**Function duration:** `api/run` is configured for up to **300 seconds** in `vercel.json`. Very large guest scans can still hit plan limits; the Hobby tier has shorter defaults than Pro — see [Vercel function limits](https://vercel.com/docs/functions/limitations). For huge exports, run **`node cli/find-osu-guest-difficulties.mjs`** locally.
 
 **Repository link in the footer:** set the `content` attribute of `<meta name="app-repo">` in `public/index.html` to your public GitHub URL.
 
@@ -64,7 +66,7 @@ runs the same API routes against your working tree (requires the Vercel CLI).
 
 ## Guest difficulty BBCode exporter
 
-`find-osu-guest-difficulties.mjs`:
+`cli/find-osu-guest-difficulties.mjs`:
 
 - accepts an osu! profile link, username, or numeric user id
 - scans the profile's public `guest` beatmapset feed
@@ -80,20 +82,20 @@ For every status (`ranked`, `loved`, `pending`, `wip`, `graveyard`, etc.), set `
 Without `OSU_ACCESS_TOKEN`, the script falls back to osu!'s public profile route (`/users/{id}/beatmapsets/guest`). That public route only exposes ranked/loved guest beatmapsets.
 
 ```bash
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493"
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493"
 ```
 
 Useful options:
 
 ```bash
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --modes=osu
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=beatmap-id
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=difficulty-updated
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --concurrency=8
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --dry-run
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --verbose
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --json
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --modes=osu
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=beatmap-id
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=difficulty-updated
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --concurrency=8
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --dry-run
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --verbose
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --json
 ```
 
 Sorting defaults to `beatmap-id`, which is usually a better proxy for when a difficulty was created than the beatmapset's upload/ranked date. `difficulty-updated` uses the difficulty's `last_updated` value, and `set-date` uses the old beatmapset-level date fallback.
@@ -108,7 +110,7 @@ PowerShell example with an OAuth token:
 
 ```powershell
 $env:OSU_ACCESS_TOKEN = "your-user-access-token"
-node find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
+node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
 ```
 
 Output format:
@@ -130,7 +132,7 @@ most recently updated maps are at the top
 
 ## Oldest public score finder
 
-`find-oldest-osu-score.mjs`:
+`cli/find-oldest-osu-score.mjs`:
 
 - accepts an osu! profile link, username, or numeric user id
 - scans the public score feeds exposed by the osu! website
@@ -153,24 +155,24 @@ That means the result is:
 ## Usage
 
 ```bash
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493"
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493"
 ```
 
 You can also pass a numeric user id:
 
 ```bash
-node find-oldest-osu-score.mjs 124493
+node cli/find-oldest-osu-score.mjs 124493
 ```
 
 ## Useful options
 
 ```bash
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --verbose
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --json
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --modes=osu
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --feeds=firsts,best
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --save-index=./scores.json
-node find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --page-size=100 --max-pages=5
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --verbose
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --json
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --modes=osu
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --feeds=firsts,best
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --save-index=./scores.json
+node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --page-size=100 --max-pages=5
 ```
 
 ## Output

@@ -575,6 +575,9 @@ function applySettings(settings) {
   oldestForm.querySelector("#oldest-save-index").value = o.saveIndex || "";
   oldestForm.querySelector("#oldest-page-size").value = String(o.pageSize ?? "");
   oldestForm.querySelector("#oldest-max-pages").value = String(o.maxPages ?? "");
+  oldestForm.querySelector("#oldest-result-count").value = String(
+    o.resultCount != null ? o.resultCount : 5,
+  );
 
   oldestForm.querySelectorAll('input[name="modes"]').forEach((input) => {
     input.checked = Array.isArray(o.modes) && o.modes.includes(input.value);
@@ -627,6 +630,7 @@ function readOldestPayload() {
   const o = latestSettings?.oldest || {};
   const form = oldestForm;
   const maxPagesRaw = Number.parseInt(form.querySelector("#oldest-max-pages").value, 10);
+  const resultCountRaw = Number.parseInt(form.querySelector("#oldest-result-count").value, 10);
   return {
     target: form.querySelector("#oldest-target").value.trim(),
     beatmapId: form.querySelector("#oldest-beatmap").value.trim(),
@@ -635,6 +639,9 @@ function readOldestPayload() {
     feeds: [...form.querySelectorAll('input[name="feeds"]:checked')].map((el) => el.value),
     pageSize: Number.parseInt(form.querySelector("#oldest-page-size").value, 10) || o.pageSize,
     maxPages: Number.isFinite(maxPagesRaw) ? maxPagesRaw : o.maxPages,
+    resultCount: Number.isInteger(resultCountRaw) && resultCountRaw >= 1
+      ? Math.min(resultCountRaw, 100)
+      : o.resultCount ?? 5,
     verbose: false,
   };
 }
@@ -885,6 +892,17 @@ function normalizeOldestScoreUrl(raw, score) {
   return raw;
 }
 
+function formatOldestWhen(iso) {
+  if (!iso) {
+    return "";
+  }
+  const d = new Date(String(iso));
+  if (Number.isNaN(d.getTime())) {
+    return String(iso);
+  }
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
 function renderOldestStructured(data) {
   if (data.noScores) {
     return `<p>${escapeHtml(data.disclaimer || "No publicly visible scores were returned.")}</p>`;
@@ -895,18 +913,60 @@ function renderOldestStructured(data) {
   }
   const items = scores
     .map((score, index) => {
-      const title = score.beatmapTitle || [score.artist, score.title].filter(Boolean).join(" - ") || "Beatmap";
-      const when = escapeHtml(score.ended_at || "");
+      const title =
+        score.beatmapTitle || [score.artist, score.title].filter(Boolean).join(" - ").trim() || "Beatmap";
+      const whenDisplay = formatOldestWhen(score.ended_at);
+      const whenIso = escapeHtml(score.ended_at || "");
       const scoreUrl = score.score_url ? normalizeOldestScoreUrl(score.score_url, score) : "";
-      const link = scoreUrl
-        ? `<a href="${escapeHtml(scoreUrl)}" target="_blank" rel="noopener">open score</a>`
-        : "";
-      return `<li><strong>${index + 1}.</strong> ${when} — ${escapeHtml(title)}${
-        score.beatmap_version ? ` [${escapeHtml(score.beatmap_version)}]` : ""
-      } — ${link}</li>`;
+      const mapUrl = score.beatmap_url;
+      const modLabel =
+        score.modsFormatted ||
+        (Array.isArray(score.mods) && score.mods.length
+          ? `+${score.mods
+              .map((m) => (typeof m === "string" ? m : m || ""))
+              .filter(Boolean)
+              .join("")}`
+          : null);
+      const accLabel =
+        score.accuracyFormatted ||
+        (typeof score.accuracy === "number"
+          ? `${(score.accuracy * 100).toFixed(2)}%`
+          : null);
+      const meta = [
+        score.rank ? `Rank ${escapeHtml(String(score.rank))}` : null,
+        modLabel ? escapeHtml(modLabel) : null,
+        score.pp != null && score.pp > 0
+          ? `${escapeHtml(String(Math.round(score.pp * 10) / 10))}pp`
+          : null,
+        accLabel ? escapeHtml(String(accLabel)) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const versionPart = score.beatmap_version ? ` [${escapeHtml(score.beatmap_version)}]` : "";
+      return `<li class="oldest-score-card" role="article" aria-label="Score ${index + 1}">
+        <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">${index + 1}</div>
+        <div class="oldest-score-main">
+          <div class="oldest-score-time">
+            <time datetime="${whenIso}">${escapeHtml(whenDisplay)}</time>
+          </div>
+          <div class="oldest-score-title">${escapeHtml(title)}${versionPart}</div>
+          ${meta ? `<div class="oldest-score-meta">${meta}</div>` : ""}
+          ${mapUrl ? `<a class="oldest-score-subtle-link" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener">view beatmap</a>` : ""}
+        </div>
+        <div class="oldest-score-action">
+          ${
+            scoreUrl
+              ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(scoreUrl)}" target="_blank" rel="noopener">Open score</a>`
+              : ""
+          }
+        </div>
+      </li>`;
     })
     .join("");
-  return `<ul class="score-list">${items}</ul>`;
+  const blurb = data.disclaimer
+    ? `<p class="oldest-results-note">${escapeHtml(data.disclaimer)}</p>`
+    : "";
+  return `${blurb}<ul class="oldest-scores" role="list">${items}</ul>`;
 }
 
 function wireCopyButtons(container) {
