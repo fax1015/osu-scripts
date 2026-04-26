@@ -614,6 +614,9 @@ a.btn:active {
 }
 
 .hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 0 0 450px;
   min-width: 0;
   z-index: 5;
@@ -916,9 +919,64 @@ a.btn:active {
   gap: 12px;
 }
 
+@keyframes hero-scroll-nudge {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+.hero-scroll-hint {
+  display: flex;
+  margin-top: 2rem;
+  align-self: flex-start;
+  color: var(--text-light);
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 0.2rem;
+  margin-left: -0.2rem;
+  transition: color 0.2s ease;
+}
+
+.hero-scroll-hint:hover {
+  color: var(--text-muted);
+}
+
+.hero-scroll-hint:focus-visible {
+  outline: 2px solid var(--text-pink);
+  outline-offset: 3px;
+}
+
+.hero-scroll-hint-icon {
+  display: block;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-scroll-hint-icon {
+    animation: hero-scroll-nudge 2.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-hint-icon {
+    animation: none;
+  }
+}
+
 @media (max-width: 720px) {
   .nav-outer {
     padding: 16px;
+  }
+
+  .hero-scroll-hint {
+    align-self: center;
+    margin-left: 0;
   }
 
   .hero-cta {
@@ -1456,6 +1514,12 @@ a.btn:active {
   flex: 0 0 auto;
 }
 
+/* Flush terminal with panel edges (no inner padding ring) */
+.panel.tool-results-terminal {
+  padding: 0;
+  overflow: hidden;
+}
+
 .results-heading {
   margin: 0 0 0.75rem;
   padding: 0;
@@ -1476,23 +1540,136 @@ a.btn:active {
   margin-top: 0;
 }
 
-/* Run log: override global Outfit from `*` — monospace terminal look */
-.tool-results-terminal .log-pre.terminal-log,
-.tool-results-terminal #run-results-log.terminal-log {
+/* Run log: app-style terminal window (title bar + traffic lights) */
+.terminal-window {
+  display: flex;
+  flex-direction: column;
   margin-top: 0;
-  min-height: 12rem;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #1e1e1e;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.terminal-window.is-terminal-minimized .terminal-window-titlebar {
+  border-bottom: none;
+}
+
+.terminal-window-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.42rem 0.7rem 0.48rem;
+  background: linear-gradient(180deg, #2d2d30 0%, #252526 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.terminal-traffic {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.terminal-traffic-btn {
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+
+.terminal-traffic-btn:hover {
+  filter: brightness(1.1);
+}
+
+.terminal-traffic-btn:active {
+  transform: scale(0.9);
+}
+
+.terminal-traffic-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
+}
+
+.terminal-traffic-btn.is-close {
+  background: #ff5f57;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.terminal-traffic-btn.is-minimize {
+  background: #febc2e;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.terminal-traffic-btn.is-zoom {
+  background: #28c840;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.terminal-window-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.48);
+  pointer-events: none;
+  text-align: center;
+}
+
+.terminal-window-body {
+  overflow: auto;
+  min-height: 10rem;
   max-height: min(28vh, 240px);
+  background: #1a1b1e;
+}
+
+.terminal-window.is-terminal-minimized .terminal-window-body {
+  display: none;
+}
+
+.terminal-window.is-terminal-maximized .terminal-window-body {
+  max-height: min(52vh, 480px);
+}
+
+.tool-results-terminal .terminal-window-body #run-results-log.terminal-log,
+.tool-results-terminal .terminal-window #run-results-log.terminal-log {
+  margin: 0;
+  min-height: 10rem;
+  max-height: none;
   padding: 0.65rem 0.75rem;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.76rem;
   line-height: 1.55;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.015em;
   tab-size: 2;
   white-space: pre-wrap;
   word-break: break-word;
-  background: #050608;
-  border-radius: 6px;
-  box-shadow: var(--box-shadow), var(--border-highlight), var(--border-dark-highlight);
+  font-variant-ligatures: none;
+  color: rgba(235, 235, 235, 0.88);
+  background: #1a1b1e;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.tool-results-terminal .terminal-window-body #run-results-log.terminal-log::selection,
+.tool-results-terminal .terminal-window #run-results-log.terminal-log::selection {
+  background: rgba(80, 140, 220, 0.38);
+  color: inherit;
 }
 
 @keyframes terminal-caret-blink {
@@ -1510,15 +1687,16 @@ a.btn:active {
 
 /* Blinking caret when the log has no text (pseudo-element does not affect :empty) */
 .tool-results-terminal #run-results-log.terminal-log:empty::after {
-  content: "|";
-  font-weight: 300;
+  content: "▌";
+  color: rgba(200, 200, 205, 0.55);
+  font-weight: 400;
   animation: terminal-caret-blink 1.05s step-end infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tool-results-terminal #run-results-log.terminal-log:empty::after {
     animation: none;
-    opacity: 0.9;
+    opacity: 0.85;
   }
 }
 
@@ -1537,9 +1715,12 @@ a.btn:active {
     overflow: visible;
   }
 
-  .tool-results-terminal .log-pre.terminal-log,
-  .tool-results-terminal #run-results-log.terminal-log {
+  .terminal-window-body {
     max-height: 16rem;
+  }
+
+  .terminal-window.is-terminal-maximized .terminal-window-body {
+    max-height: min(42vh, 360px);
   }
 }
 
@@ -1782,7 +1963,7 @@ a.btn:active {
 .preview-area {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-button);
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
@@ -1817,17 +1998,49 @@ a.btn:active {
   color: var(--text-muted);
 }
 
+/* Segmented tab switcher for Raw / Preview */
 .bbcode-result-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  display: inline-flex;
+  align-items: stretch;
+  padding: 4px;
+  gap: 4px;
   margin: 0 0 0.6rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.bbcode-result-toolbar .btn {
+  flex: 1 1 auto;
+  min-width: 4.75rem;
+  margin: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bbcode-result-toolbar .btn:hover:not(.is-active) {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bbcode-result-toolbar .btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text-pink) 70%, transparent);
+  outline-offset: 2px;
 }
 
 .bbcode-result-toolbar .btn.is-active {
-  border-color: rgba(255, 102, 171, 0.45);
-  background: rgba(255, 102, 171, 0.16);
+  background: rgba(255, 102, 171, 0.24);
   color: var(--text-main);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .bbcode-actions {
@@ -1906,4 +2119,10 @@ input[type="checkbox"] {
 
 input[type="checkbox"]:checked {
   background-color: var(--text-pink);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8rem auto 4rem;
 }

@@ -25,6 +25,10 @@ const navAnchors = document.querySelector("#nav-anchors");
 
 const runResultsBody = document.querySelector("#run-results-body");
 const runResultsLog = document.querySelector("#run-results-log");
+const terminalWindowEl = document.querySelector("#terminal-window");
+const terminalBtnClose = document.querySelector("#terminal-btn-close");
+const terminalBtnMinimize = document.querySelector("#terminal-btn-minimize");
+const terminalBtnZoom = document.querySelector("#terminal-btn-zoom");
 const guestUnifiedTemplate = document.querySelector("#guest-unified-template");
 const guestTemplatePreview = document.querySelector("#guest-template-preview");
 const resetGuestTemplate = document.querySelector("#reset-guest-template");
@@ -454,6 +458,46 @@ async function init() {
   guestForm.addEventListener("submit", (event) => runScript(event, "guest"));
   oldestForm.addEventListener("submit", (event) => runScript(event, "oldest"));
 
+  terminalBtnClose?.addEventListener("click", () => {
+    if (runResultsLog) runResultsLog.textContent = "";
+  });
+
+  terminalBtnMinimize?.addEventListener("click", () => {
+    if (!terminalWindowEl) return;
+    terminalWindowEl.classList.toggle("is-terminal-minimized");
+    terminalWindowEl.classList.remove("is-terminal-maximized");
+    const collapsed = terminalWindowEl.classList.contains("is-terminal-minimized");
+    terminalBtnMinimize?.setAttribute("aria-pressed", collapsed ? "true" : "false");
+    terminalBtnZoom?.setAttribute("aria-pressed", "false");
+  });
+
+  terminalBtnZoom?.addEventListener("click", () => {
+    if (!terminalWindowEl) return;
+    if (terminalWindowEl.classList.contains("is-terminal-minimized")) {
+      terminalWindowEl.classList.remove("is-terminal-minimized");
+      terminalBtnMinimize?.setAttribute("aria-pressed", "false");
+    }
+    terminalWindowEl.classList.toggle("is-terminal-maximized");
+    const expanded = terminalWindowEl.classList.contains("is-terminal-maximized");
+    terminalBtnZoom?.setAttribute("aria-pressed", expanded ? "true" : "false");
+  });
+
+  runResultsLog?.addEventListener("dblclick", async () => {
+    const text = runResultsLog.textContent;
+    if (!text?.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(runResultsLog);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("copy");
+      sel.removeAllRanges();
+    }
+  });
+
   window.addEventListener("hashchange", showHashMessages);
 
   guestUnifiedTemplate?.addEventListener("input", updateGuestTemplatePreview);
@@ -768,8 +812,8 @@ function updateTokenStatus(settings) {
     }
     const exp = oauth.tokenExpiresAt ? new Date(oauth.tokenExpiresAt).toLocaleString() : "";
     tokenStatus.textContent = exp
-      ? `Signed in as ${user.username}. Token refresh window until ${exp}.`
-      : `Signed in as ${user.username}.`;
+      ? `signed in as ${user.username} until ${exp}.`
+      : `signed in as ${user.username}.`;
     tokenStatus.className = "token-status profile-menu-status is-ok";
     setAccountFeedback("");
     setLoginHint("");
@@ -898,9 +942,7 @@ function bbcodeToHtml(bbcode) {
 function renderGuestStatusLine(data) {
   const counts = data.counts || {};
   const pieces = [
-    `${counts.guestDifficulties ?? 0} found`,
-    `${counts.existingUpdated ?? 0} updated`,
-    `${counts.newCount ?? 0} new`,
+    `${counts.guestDifficulties ?? 0} guest difficulties found`,
   ];
 
   if (data.fileWritten && data.outputPath && data.outputPath !== '-') {
@@ -922,9 +964,9 @@ function renderGuestStructured(data) {
     const previewId = `${id}-preview`;
     parts.push(
       `<div class="bbcode-block">
-        <div class="bbcode-result-toolbar" role="group" aria-label="BBCode result view">
-          <button type="button" class="btn btn-secondary btn-sm is-active" data-bbcode-view="raw" data-raw-id="${id}" data-preview-id="${previewId}">Raw</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-bbcode-view="preview" data-raw-id="${id}" data-preview-id="${previewId}">Preview</button>
+        <div class="bbcode-result-toolbar" role="tablist" aria-label="BBCode result view">
+          <button type="button" role="tab" aria-selected="true" class="btn btn-secondary btn-sm is-active" data-bbcode-view="raw" data-raw-id="${id}" data-preview-id="${previewId}">Raw</button>
+          <button type="button" role="tab" aria-selected="false" class="btn btn-secondary btn-sm" data-bbcode-view="preview" data-raw-id="${id}" data-preview-id="${previewId}">Preview</button>
         </div>
         <textarea id="${id}" class="bbcode-textarea" readonly>${escapeHtml(data.outputBbcode)}</textarea>
         <div id="${previewId}" class="bbcode-rendered-preview" hidden>${bbcodeToHtml(data.outputBbcode)}</div>
@@ -1054,7 +1096,9 @@ function wireCopyButtons(container) {
       preview.hidden = !showPreview;
 
       container.querySelectorAll(`[data-raw-id="${btn.getAttribute("data-raw-id")}"]`).forEach((viewBtn) => {
-        viewBtn.classList.toggle("is-active", viewBtn === btn);
+        const active = viewBtn === btn;
+        viewBtn.classList.toggle("is-active", active);
+        viewBtn.setAttribute("aria-selected", active ? "true" : "false");
       });
     });
   });
@@ -1188,6 +1232,8 @@ async function runScript(event, script) {
   const logEl = runResultsLog;
   bodyEl.innerHTML = "<p>Running…</p>";
   logEl.textContent = "";
+  terminalWindowEl?.classList.remove("is-terminal-minimized");
+  terminalBtnMinimize?.setAttribute("aria-pressed", "false");
   logEl.closest("details")?.setAttribute("open", "");
 
   try {

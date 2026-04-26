@@ -82,6 +82,14 @@
             <a class="btn btn-primary" href="#guest-difficulties">guest diff bbcode</a>
             <a class="btn btn-secondary" href="#oldest-scores">find oldest scores</a>
           </div>
+          <a href="#guest-difficulties" class="hero-scroll-hint">
+            <span class="visually-hidden">Scroll to tools</span>
+            <svg class="hero-scroll-hint-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M7 10l5 5 5-5" />
+            </svg>
+          </a>
         </div>
 
         <div class="hero-right">
@@ -98,6 +106,8 @@
           </div>
         </div>
       </section>
+
+      <div class="divider"></div>
 
       <div class="tools-page-layout">
         <div class="tools-main">
@@ -311,9 +321,24 @@
             </div>
           </section>
 
-          <section class="panel tool-results-terminal" aria-labelledby="run-log-heading">
-            <h3 id="run-log-heading" class="results-heading">log</h3>
-            <pre id="run-results-log" class="log-pre terminal-log" spellcheck="false" aria-live="polite"></pre>
+          <section class="panel tool-results-terminal" aria-labelledby="run-terminal-heading">
+            <div id="terminal-window" class="terminal-window">
+              <div class="terminal-window-titlebar">
+                <div class="terminal-traffic" role="toolbar" aria-label="Terminal">
+                  <button type="button" id="terminal-btn-close" class="terminal-traffic-btn is-close"
+                    title="Clear terminal" aria-label="Clear terminal"></button>
+                  <button type="button" id="terminal-btn-minimize" class="terminal-traffic-btn is-minimize"
+                    title="Collapse terminal" aria-label="Collapse terminal panel"></button>
+                  <button type="button" id="terminal-btn-zoom" class="terminal-traffic-btn is-zoom"
+                    title="Expand terminal height" aria-label="Expand terminal height"></button>
+                </div>
+                <h3 id="run-terminal-heading" class="terminal-window-title">terminal</h3>
+              </div>
+              <div class="terminal-window-body tool-results-scroll">
+                <pre id="run-results-log" class="log-pre terminal-log" spellcheck="false" aria-live="polite"
+                  title="Double-click to copy all"></pre>
+              </div>
+            </div>
           </section>
         </aside>
       </div>
