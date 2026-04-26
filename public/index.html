@@ -123,13 +123,19 @@
                       </div>
                       <div class="field span-2">
                         <label for="guest-sort">sort by</label>
-                        <div class="profile-style-select-wrap">
-                          <select id="guest-sort" class="profile-style-select" name="sort"
-                            aria-label="Sort guest maps by">
-                            <option value="beatmap-id">Beatmap ID</option>
-                            <option value="difficulty-updated">Difficulty updated</option>
-                            <option value="set-date">Set date</option>
-                          </select>
+                        <div style="position: relative; width: 100%; z-index: 10;" id="guest-sort-dropdown">
+                          <button type="button" class="guest-sort-btn" id="guest-sort-trigger" aria-expanded="false" aria-controls="guest-sort-panel">
+                            <span id="guest-sort-display">Beatmap ID</span>
+                            <svg class="profile-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M2.5 4.25L6 7.75l3.5-3.5"/>
+                            </svg>
+                          </button>
+                          <div id="guest-sort-panel" class="profile-menu-panel" role="listbox" aria-hidden="true" style="width: 100%; min-width: 0; left: 0; top: calc(100% + 4px);">
+                            <button type="button" class="profile-menu-item sort-option" role="option" data-value="beatmap-id" aria-selected="true">Beatmap ID</button>
+                            <button type="button" class="profile-menu-item sort-option" role="option" data-value="difficulty-updated" aria-selected="false">Difficulty updated</button>
+                            <button type="button" class="profile-menu-item sort-option" role="option" data-value="set-date" aria-selected="false">Set date</button>
+                          </div>
+                          <input type="hidden" name="sort" id="guest-sort" value="beatmap-id">
                         </div>
                       </div>
                     </div>
@@ -240,30 +246,30 @@
               <form id="oldest-form" class="tool-form">
                 <div class="form-grid">
                   <div class="field span-2">
-                    <label for="oldest-target">Profile, username, or user ID</label>
+                    <label for="oldest-target">profile, username, or user ID</label>
                     <input id="oldest-target" name="target" type="text" autocomplete="off"
                       placeholder="https://osu.ppy.sh/users/124493">
                   </div>
                   <div class="field">
-                    <label for="oldest-beatmap">Beatmap ID</label>
+                    <label for="oldest-beatmap">beatmap ID</label>
                     <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off"
                       placeholder="optional; eg: 2778999">
                   </div>
                   <div class="field" hidden>
-                    <label for="oldest-save-index">Save index</label>
+                    <label for="oldest-save-index">save index</label>
                     <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off"
                       placeholder="scores.json">
                   </div>
                   <div class="field" hidden>
-                    <label for="oldest-page-size">Page size</label>
+                    <label for="oldest-page-size">page size</label>
                     <input id="oldest-page-size" name="pageSize" type="number" min="1" step="1">
                   </div>
                   <div class="field" hidden>
-                    <label for="oldest-max-pages">Max pages (0 = no limit)</label>
+                    <label for="oldest-max-pages">max pages (0 = no limit)</label>
                     <input id="oldest-max-pages" name="maxPages" type="number" min="0" step="1">
                   </div>
                   <div class="field">
-                    <label for="oldest-result-count">Scores to list</label>
+                    <label for="oldest-result-count">number of scores</label>
                     <input id="oldest-result-count" name="resultCount" type="number" min="1" max="100" step="1"
                       value="5" title="How many oldest scores to show in results (1–100)">
                   </div>

@@ -450,10 +450,6 @@ h6 {
   width: 100%;
 }
 
-.btn-run-container:hover>.btn-run::after {
-  opacity: 1;
-}
-
 .btn-run {
   background: var(--bg-button);
   border-radius: 8px;
@@ -461,9 +457,8 @@ h6 {
   font-weight: 600;
   width: 100%;
   position: relative;
-  padding: 0;
-  min-height: 48px;
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  padding: 1px;
+  border: none;
   display: flex;
   cursor: pointer;
   overflow: hidden;
@@ -490,7 +485,6 @@ h6 {
   content: "";
   height: 100%;
   left: 0px;
-  opacity: 0;
   position: absolute;
   top: 0px;
   transition: 0.5s cubic-bezier(.38, .18, .15, 1.01);
@@ -498,28 +492,36 @@ h6 {
 }
 
 .btn-run::before {
-  background: radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0),
-      rgba(255, 119, 187, 0.1),
+  opacity: 0;
+  background: radial-gradient(500px circle at var(--mouse-x, -9999px) var(--mouse-y, -9999px),
+      color-mix(in srgb, var(--text-pink) 10%, transparent),
       transparent 40%);
   z-index: 3;
 }
 
+
+
 .btn-run::after {
-  background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0),
-      rgb(255, 151, 203),
+  opacity: 0.4;
+  background: radial-gradient(400px circle at var(--mouse-x, -9999px) var(--mouse-y, -9999px),
+      var(--text-pink),
       transparent 40%);
   z-index: 1;
 }
 
+.btn-run:hover::after {
+  opacity: 1;
+}
+
 .btn-run>.btn-run-content {
   background-color: rgb(19, 20, 21);
-  border: 1px solid var(--border-color);
-  border-radius: inherit;
+  border-radius: 7px;
   display: flex;
   flex-grow: 1;
-  padding: 12px 20px;
-  position: absolute;
-  inset: 0px;
+  width: 100%;
+  height: 100%;
+  padding: 13px 20px;
+  position: relative;
   z-index: 2;
   align-items: center;
   justify-content: center;
@@ -1542,30 +1544,14 @@ a.btn:active {
 }
 
 /* Sort control: shell like nav profile trigger + panel polish */
-.profile-style-select-wrap {
-  position: relative;
-}
-
-.profile-style-select-wrap::after {
-  content: "";
-  position: absolute;
-  right: 0.7rem;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  margin-top: -6px;
-  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.25L6 7.75l3.5-3.5' fill='none' stroke='%23ffffff' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  opacity: 0.72;
-  pointer-events: none;
-  transition: transform 0.25s cubic-bezier(0.075, 0.82, 0.165, 1);
-}
-
-.field .profile-style-select-wrap select.profile-style-select {
+/* Custom Sort Dropdown Button (replaces select) */
+.guest-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  appearance: none;
-  -webkit-appearance: none;
   min-height: 2.15rem;
-  padding: 0.5rem 2.1rem 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 8px;
   border: var(--border-active);
   background: var(--bg-button);
@@ -1576,26 +1562,20 @@ a.btn:active {
   transition: all 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-.field .profile-style-select-wrap select.profile-style-select:hover {
+.guest-sort-btn:hover {
   border-color: rgba(255, 255, 255, 0.14);
   background: var(--btn-fill-hover);
 }
 
-.field .profile-style-select-wrap select.profile-style-select:focus {
+.guest-sort-btn[aria-expanded="true"] {
   outline: none;
   border-color: rgba(255, 102, 171, 0.45);
   background: rgba(255, 102, 171, 0.12);
   box-shadow: 0 0 0 1px rgba(255, 102, 171, 0.2);
 }
 
-.profile-style-select-wrap:focus-within::after {
+.guest-sort-btn[aria-expanded="true"] .profile-chevron {
   transform: rotate(180deg);
-}
-
-.field .profile-style-select-wrap select.profile-style-select option {
-  background: rgb(28, 30, 34);
-  color: var(--text-main);
-  padding: 0.5rem;
 }
 
 .tool-sidebar {

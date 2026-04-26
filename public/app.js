@@ -341,6 +341,7 @@ function onDocumentKeydownMenu(event) {
   if (event.key === "Escape") {
     closeProfileMenu();
     closeMobileNav();
+    document.getElementById("guest-sort-panel")?.classList.remove("is-open");
   }
 }
 
@@ -415,6 +416,41 @@ async function init() {
     window.location.hash = "setup";
     clientIdInput.focus();
   });
+
+  const guestSortTrigger = document.getElementById("guest-sort-trigger");
+  const guestSortPanel = document.getElementById("guest-sort-panel");
+  const guestSortInput = document.getElementById("guest-sort");
+  const guestSortDisplay = document.getElementById("guest-sort-display");
+
+  guestSortTrigger?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    guestSortPanel.classList.toggle("is-open");
+    const isOpen = guestSortPanel.classList.contains("is-open");
+    guestSortTrigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    guestSortPanel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (guestSortPanel?.classList.contains("is-open") && !e.target.closest("#guest-sort-dropdown")) {
+      guestSortPanel.classList.remove("is-open");
+      guestSortTrigger.setAttribute("aria-expanded", "false");
+      guestSortPanel.setAttribute("aria-hidden", "true");
+    }
+  });
+
+  guestSortPanel?.querySelectorAll(".sort-option").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      guestSortInput.value = opt.dataset.value;
+      guestSortDisplay.textContent = opt.textContent;
+      guestSortPanel.classList.remove("is-open");
+      guestSortTrigger.setAttribute("aria-expanded", "false");
+      guestSortPanel.setAttribute("aria-hidden", "true");
+      
+      guestSortPanel.querySelectorAll(".sort-option").forEach(o => o.setAttribute("aria-selected", "false"));
+      opt.setAttribute("aria-selected", "true");
+    });
+  });
+
   guestForm.addEventListener("submit", (event) => runScript(event, "guest"));
   oldestForm.addEventListener("submit", (event) => runScript(event, "oldest"));
 
@@ -571,7 +607,16 @@ function applySettings(settings) {
   const oauth = settings.oauth;
 
   guestForm.querySelector("#guest-target").value = g.target || "";
-  guestForm.querySelector("#guest-sort").value = g.sort || "beatmap-id";
+  
+  const sortVal = g.sort || "beatmap-id";
+  guestForm.querySelector("#guest-sort").value = sortVal;
+  const sortOpt = document.querySelector(`.sort-option[data-value="${sortVal}"]`);
+  if (sortOpt && document.getElementById("guest-sort-display")) {
+    document.getElementById("guest-sort-display").textContent = sortOpt.textContent;
+    document.querySelectorAll(".sort-option").forEach(o => o.setAttribute("aria-selected", "false"));
+    sortOpt.setAttribute("aria-selected", "true");
+  }
+
   guestForm.querySelector("#guest-page-size").value = String(g.pageSize ?? "");
   guestForm.querySelector("#guest-concurrency").value = String(g.concurrency ?? "");
   guestForm.querySelector("#guest-max-pages").value = String(g.maxPages ?? "");
