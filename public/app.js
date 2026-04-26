@@ -876,6 +876,15 @@ function renderGuestStructured(data) {
   return parts.join('');
 }
 
+function normalizeOldestScoreUrl(raw, score) {
+  // Safety net for old/cached results: convert bare legacy links into ruleset links.
+  const match = String(raw).match(/^https:\/\/osu\.ppy\.sh\/scores\/(\d+)$/);
+  if (match && score.mode) {
+    return `https://osu.ppy.sh/scores/${encodeURIComponent(score.mode)}/${match[1]}`;
+  }
+  return raw;
+}
+
 function renderOldestStructured(data) {
   if (data.noScores) {
     return `<p>${escapeHtml(data.disclaimer || "No publicly visible scores were returned.")}</p>`;
@@ -884,13 +893,13 @@ function renderOldestStructured(data) {
   if (!Array.isArray(scores) || scores.length === 0) {
     return `<p>${escapeHtml(data.disclaimer || "No scores returned.")}</p>`;
   }
-  const visibleScores = scores.slice(0, 4);
-  const items = visibleScores
+  const items = scores
     .map((score, index) => {
       const title = score.beatmapTitle || [score.artist, score.title].filter(Boolean).join(" - ") || "Beatmap";
       const when = escapeHtml(score.ended_at || "");
-      const link = score.score_url
-        ? `<a href="${escapeHtml(score.score_url)}" target="_blank" rel="noopener">open score</a>`
+      const scoreUrl = score.score_url ? normalizeOldestScoreUrl(score.score_url, score) : "";
+      const link = scoreUrl
+        ? `<a href="${escapeHtml(scoreUrl)}" target="_blank" rel="noopener">open score</a>`
         : "";
       return `<li><strong>${index + 1}.</strong> ${when} — ${escapeHtml(title)}${
         score.beatmap_version ? ` [${escapeHtml(score.beatmap_version)}]` : ""
