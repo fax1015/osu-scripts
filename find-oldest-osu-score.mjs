@@ -249,7 +249,27 @@ async function resolveUser(target) {
   };
 }
 
-function normalizeScore(score, mode, feed) {
+function buildScoreUrl(score, mode, source) {
+  if (!score || !mode) {
+    return null;
+  }
+
+  const id = score.legacy_score_id ?? score.id ?? null;
+  if (!id) {
+    return null;
+  }
+
+  // Public profile endpoints return legacy/ruleset score ids. Those MUST use
+  // /scores/{mode}/{id}; bare /scores/{id} can resolve to a different solo score.
+  if (source === "public-web" || score.legacy_score_id) {
+    return `https://osu.ppy.sh/scores/${mode}/${id}`;
+  }
+
+  // API v2 score ids are modern solo score ids, so the bare route is correct there.
+  return `https://osu.ppy.sh/scores/${id}`;
+}
+
+function normalizeScore(score, mode, feed, source = ACCESS_TOKEN ? "api-v2" : "public-web") {
   const endedAt = score.ended_at || score.created_at || null;
   const scoreRulesetMode =
     normalizeMode(score.ruleset_id) ||
@@ -262,10 +282,14 @@ function normalizeScore(score, mode, feed) {
     queriedMode ||
     beatmapMode ||
     null;
-  const modernScoreUrl = score.id ? `https://osu.ppy.sh/scores/${score.id}` : null;
+  const scoreUrl = buildScoreUrl(score, actualMode, source);
   const legacyScoreUrl =
-    score.legacy_score_id && actualMode
-      ? `https://osu.ppy.sh/scores/${actualMode}/${score.legacy_score_id}`
+    actualMode && (score.legacy_score_id || source === "public-web")
+      ? `https://osu.ppy.sh/scores/${actualMode}/${score.legacy_score_id ?? score.id}`
+      : null;
+  const modernScoreUrl =
+    source === "api-v2" && score.id
+      ? `https://osu.ppy.sh/scores/${score.id}`
       : null;
 
   return {
@@ -286,8 +310,9 @@ function normalizeScore(score, mode, feed) {
     passed: score.passed ?? null,
     legacy_score_id: score.legacy_score_id ?? null,
     total_score: score.total_score ?? score.legacy_total_score ?? null,
-    score_url: modernScoreUrl || legacyScoreUrl,
+    score_url: scoreUrl,
     legacy_score_url: legacyScoreUrl,
+    modern_score_url: modernScoreUrl,
     beatmap_id: score.beatmap_id ?? score.beatmap?.id ?? null,
     beatmap_url: score.beatmap?.url ?? null,
     beatmap_version: score.beatmap?.version ?? null,
@@ -361,7 +386,7 @@ async function scanFeed(userId, mode, feed, options) {
     }
 
     for (const rawScore of batch) {
-      const score = normalizeScore(rawScore, mode, feed);
+      const score = normalizeScore(rawScore, mode, feed, ACCESS_TOKEN ? "api-v2" : "public-web");
       if (scoreMatchesMode(score, mode)) {
         scores.push(score);
       } else if (options.verbose) {
@@ -402,7 +427,7 @@ async function scanBeatmapFeed(userId, beatmapId, mode, options) {
   try {
     const data = await fetchJson(url);
     const scores = (data.scores || [])
-      .map((s) => normalizeScore(s, mode, `beatmap:${beatmapId}`))
+      .map((s) => normalizeScore(s, mode, `beatmap:${beatmapId}`, "api-v2"))
       .filter((score) => scoreMatchesMode(score, mode));
     return {
       mode,

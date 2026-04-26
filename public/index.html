@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>osu! scripts</title>
   <meta name="description" content="Guest-difficulty BBCode and oldest scores from public osu! feeds.">
-  <meta name="app-repo" content="">
+  <meta name="app-repo" content="https://github.com/faxaxaxa/osu-scripts">
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -52,7 +52,8 @@
               </button>
               <div id="profile-menu-panel" class="profile-menu-panel" role="menu" aria-hidden="true">
                 <p id="token-status" class="token-status profile-menu-status" role="status">Checking login…</p>
-                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">Save settings</button>
+                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">Save
+                  settings</button>
                 <button type="button" id="logout-osu" class="profile-menu-item" role="menuitem">Log out</button>
                 <button type="button" id="close-app" class="profile-menu-item" role="menuitem" hidden>Close app</button>
               </div>
@@ -88,7 +89,8 @@
           <div class="map-preview-popup is-open" id="mapPreviewPopup">
             <div class="map-preview-canvas-wrap">
               <canvas id="mapPreviewCanvas" class="map-preview-canvas" width="1024" height="768"></canvas>
-              <a class="map-preview-track-link" id="mapPreviewTrackLink" href="https://osu.ppy.sh" target="_blank" rel="noopener noreferrer">
+              <a class="map-preview-track-link" id="mapPreviewTrackLink" href="https://osu.ppy.sh" target="_blank"
+                rel="noopener noreferrer">
                 <p class="map-preview-track-title" id="mapPreviewTrackTitle"></p>
                 <p class="map-preview-track-diff" id="mapPreviewTrackDiff"></p>
                 <p class="map-preview-track-mapper" id="mapPreviewTrackMapper"></p>
@@ -98,85 +100,129 @@
         </div>
       </section>
 
+      <div class="tools-page-layout">
+        <div class="tools-main">
       <section id="guest-difficulties" class="page-section" aria-labelledby="guest-heading">
         <div class="section-intro">
-          <h2 id="guest-heading" class="section-title">Guest BBCode</h2>
+          <h2 id="guest-heading" class="section-title">guest difficulty BBCode list</h2>
           <p class="section-lead">
-            Guest maps you mapped on other people’s sets, merged into one BBCode block. Without OAuth, you only get
-            ranked and loved guest sets.
+            outputs all guest difficulties made by a user in one text block. works best for your own guest diffs, as the
+            api may not show all guest difficulties
           </p>
         </div>
 
         <div class="panel">
-          <form id="guest-form" class="tool-form">
-            <div class="form-grid">
-              <div class="field span-2">
-                <label for="guest-target">Profile, username, or user ID</label>
-                <input id="guest-target" name="target" type="text" autocomplete="off" placeholder="https://osu.ppy.sh/users/124493">
-              </div>
-              <div class="field">
-                <label for="guest-output">Output file</label>
-                <input id="guest-output" name="output" type="text" autocomplete="off" placeholder="guest-difficulties.txt">
-              </div>
-              <div class="field">
-                <label for="guest-sort">Sort</label>
-                <select id="guest-sort" name="sort">
-                  <option value="beatmap-id">Beatmap ID</option>
-                  <option value="difficulty-updated">Difficulty updated</option>
-                  <option value="set-date">Set date</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="guest-page-size">Page size</label>
-                <input id="guest-page-size" name="pageSize" type="number" min="1" step="1">
-              </div>
-              <div class="field">
-                <label for="guest-concurrency">Concurrency</label>
-                <input id="guest-concurrency" name="concurrency" type="number" min="1" step="1">
-              </div>
-              <div class="field span-2">
-                <label for="guest-max-pages">Max pages (0 = no limit)</label>
-                <input id="guest-max-pages" name="maxPages" type="number" min="0" step="1">
-              </div>
-            </div>
-            <fieldset class="field-set">
-              <legend>Modes</legend>
-              <div class="chip-group">
-                <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
-                <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
-                <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
-                <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
-              </div>
-            </fieldset>
-            <fieldset class="field-set">
-              <legend>Options</legend>
-              <div class="chip-group">
-                <label class="chip"><input type="checkbox" name="dryRun"> Dry run</label>
-                <label class="chip"><input type="checkbox" name="verbose"> Verbose</label>
-              </div>
-            </fieldset>
-            <div class="form-actions">
-              <button class="btn btn-run" type="submit">Run</button>
-            </div>
-          </form>
-        </div>
+              <form id="guest-form" class="tool-form">
+                <div class="tool-grid">
+                  <div class="form-main">
+                    <div class="form-grid">
+                      <div class="field span-2">
+                        <label for="guest-target">profile, username, or user ID</label>
+                        <input id="guest-target" name="target" type="text" autocomplete="off"
+                          placeholder="https://osu.ppy.sh/users/124493">
+                      </div>
+                      <div class="field span-2">
+                        <label for="guest-sort">sort by</label>
+                        <div class="profile-style-select-wrap">
+                          <select id="guest-sort" class="profile-style-select" name="sort" aria-label="Sort guest maps by">
+                            <option value="beatmap-id">Beatmap ID</option>
+                            <option value="difficulty-updated">Difficulty updated</option>
+                            <option value="set-date">Set date</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
 
-        <div id="guest-results" class="results-panel" hidden>
-          <h3 class="results-heading">Results</h3>
-          <div id="guest-results-body" class="results-body"></div>
-          <details class="technical-log">
-            <summary>Technical details</summary>
-            <pre id="guest-results-log" class="log-pre"></pre>
-          </details>
+                    <fieldset class="field-set">
+                      <legend>modes</legend>
+                      <div class="chip-group">
+                        <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
+                        <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
+                        <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
+                        <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
+                      </div>
+                    </fieldset>
+
+                    <input type="hidden" id="guest-page-size" name="pageSize" value="100" aria-hidden="true">
+                    <input type="hidden" id="guest-concurrency" name="concurrency" value="6" aria-hidden="true">
+                    <input type="hidden" id="guest-max-pages" name="maxPages" value="0" aria-hidden="true">
+
+                    <div class="form-actions">
+                      <button class="btn btn-run" type="submit">Run</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="guest-bbcode-editor-panel">
+                  <aside class="guest-bbcode-ref" aria-label="Placeholder reference">
+                <h3 class="guest-bbcode-heading">syntax</h3>
+                <p class="guest-bbcode-ref-lead">write normal BBCode, but with {tokens} for values that change.</p>
+
+                <div class="guest-bbcode-ref-block">
+                  <p class="guest-bbcode-ref-title">Box / notice</p>
+                  <ul class="guest-bbcode-ref-list">
+                    <li><code>{total}</code> <span class="guest-bbcode-ref-ex">total map count for all years</span></li>
+                    <li><code>{username}</code> <span class="guest-bbcode-ref-ex">profile username</span></li>
+                    <li><code>{user_id}</code> <span class="guest-bbcode-ref-ex">profile numeric id</span></li>
+                  </ul>
+                </div>
+                <div class="guest-bbcode-ref-block">
+                  <p class="guest-bbcode-ref-title">Year line</p>
+                  <ul class="guest-bbcode-ref-list">
+                    <li><code>{year}</code> <span class="guest-bbcode-ref-ex">e.g. 2026</span></li>
+                    <li><code>{count}</code> <span class="guest-bbcode-ref-ex">total map count for specific year</span></li>
+                  </ul>
+                </div>
+                <div class="guest-bbcode-ref-block">
+                  <p class="guest-bbcode-ref-title">Beatmap line (after <code># osu-guest-line</code>)</p>
+                  <ul class="guest-bbcode-ref-list">
+                    <li><code>{url}</code> <span class="guest-bbcode-ref-ex">beatmap link</span></li>
+                    <li><code>{artist}</code> <span class="guest-bbcode-ref-ex">artist name</span></li>
+                    <li><code>{title}</code> <span class="guest-bbcode-ref-ex">romanised song title</span></li>
+                    <li><code>{version}</code> <span class="guest-bbcode-ref-ex">difficulty name</span></li>
+                    <li><code>{status_color}</code> <span class="guest-bbcode-ref-ex">hex colour for rank tag</span></li>
+                    <li><code>{status_label}</code> <span class="guest-bbcode-ref-ex">rank tag status label</span></li>
+                  </ul>
+                </div>
+                <div class="guest-bbcode-ref-block">
+                  <p class="guest-bbcode-ref-title">Example beatmap line</p>
+                  <pre class="guest-bbcode-ref-sample">[url={url}]{artist} - {title} ({version})[/url][size=85][color={status_color}]({status_label})[/color][/size]</pre>
+                </div>
+              </aside>
+
+              <div class="guest-bbcode-editor-main">
+                <div class="guest-bbcode-intro">
+                  <h3 class="guest-bbcode-heading">BBCode template</h3>
+                  <p class="guest-bbcode-lead">Mix forum BBCode with <code>{tokens}</code> where values change; fixed
+                    strings (like the spoiler title in <code>[box=…]</code>) can stay plain text. Use
+                    <code># osu-guest-line</code> plus one line for every repeated guest row; keep
+                    <code>[notice]</code> … <code>[/notice]</code> and <code>[box]</code> … <code>[/box]</code>.</p>
+                </div>
+                <div class="field guest-bbcode-unified-field">
+                  <label for="guest-unified-template" class="visually-hidden">Guest BBCode unified template</label>
+                  <textarea id="guest-unified-template" class="code-textarea guest-bbcode-unified" rows="22"
+                    spellcheck="false" autocomplete="off" aria-describedby="guest-template-parse-hint"></textarea>
+                  <p id="guest-template-parse-hint" class="field-hint guest-bbcode-parse-hint" hidden></p>
+                </div>
+
+                <div class="preview-area guest-bbcode-preview">
+                  <div class="preview-header">
+                    <p class="preview-title">Sample output</p>
+                    <button type="button" id="reset-guest-template" class="link-button btn-sm">Reset to defaults</button>
+                  </div>
+                  <pre id="guest-template-preview" class="preview-content" aria-live="polite"></pre>
+                </div>
+              </div>
+            </div>
+              </form>
         </div>
       </section>
 
       <section id="oldest-scores" class="page-section" aria-labelledby="oldest-heading">
         <div class="section-intro">
-          <h2 id="oldest-heading" class="section-title">Oldest scores</h2>
+          <h2 id="oldest-heading" class="section-title">find oldest scores</h2>
           <p class="section-lead">
-            Oldest plays we can see from firsts, best, and recent. Not necessarily your real first play if it never
-            appeared there.
+            searches public score feeds for the oldest scores. not necessarily your real first play, but the first one visible. it tries its best :D
           </p>
         </div>
 
@@ -185,7 +231,8 @@
             <div class="form-grid">
               <div class="field span-2">
                 <label for="oldest-target">Profile, username, or user ID</label>
-                <input id="oldest-target" name="target" type="text" autocomplete="off" placeholder="https://osu.ppy.sh/users/124493">
+                <input id="oldest-target" name="target" type="text" autocomplete="off"
+                  placeholder="https://osu.ppy.sh/users/124493">
               </div>
               <div class="field">
                 <label for="oldest-beatmap">Beatmap ID</label>
@@ -221,27 +268,28 @@
                 <label class="chip"><input type="checkbox" name="feeds" value="recent"> recent</label>
               </div>
             </fieldset>
-            <fieldset class="field-set">
-              <legend>Options</legend>
-              <div class="chip-group">
-                <label class="chip"><input type="checkbox" name="verbose"> Verbose</label>
-              </div>
-            </fieldset>
             <div class="form-actions">
               <button class="btn btn-run" type="submit">Run</button>
             </div>
           </form>
         </div>
-
-        <div id="oldest-results" class="results-panel" hidden>
-          <h3 class="results-heading">Results</h3>
-          <div id="oldest-results-body" class="results-body"></div>
-          <details class="technical-log">
-            <summary>Technical details</summary>
-            <pre id="oldest-results-log" class="log-pre"></pre>
-          </details>
-        </div>
       </section>
+        </div>
+
+        <aside class="tools-results-dock" aria-label="Script run output">
+          <section id="run-results" class="panel tool-results-panel" aria-labelledby="run-results-heading">
+            <h3 id="run-results-heading" class="results-heading">results</h3>
+            <div id="run-results-body" class="results-body">
+              <p class="tool-results-hint">run some scripts to see output here</p>
+            </div>
+          </section>
+
+          <section class="panel tool-results-terminal" aria-labelledby="run-log-heading">
+            <h3 id="run-log-heading" class="results-heading">log</h3>
+            <pre id="run-results-log" class="log-pre terminal-log" spellcheck="false" aria-live="polite"></pre>
+          </section>
+        </aside>
+      </div>
 
       <section id="setup" class="page-section" aria-labelledby="setup-heading">
         <div class="section-intro">
@@ -264,7 +312,8 @@
             </div>
             <div class="field">
               <label for="oauth-client-secret">Client Secret</label>
-              <input id="oauth-client-secret" type="password" autocomplete="off" spellcheck="false" placeholder="Leave blank to keep saved">
+              <input id="oauth-client-secret" type="password" autocomplete="off" spellcheck="false"
+                placeholder="Leave blank to keep saved">
             </div>
             <div class="field span-2">
               <label for="oauth-callback-url">Callback URL</label>
@@ -287,7 +336,7 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <p>unaffiliated with osu! or ppy...</p>
-.     <p><a id="footer-repo" class="inline-link" href="#" target="_blank" rel="noopener">repository</a></p>
+      <p><a id="footer-repo" class="inline-link" href="https://github.com/faxaxaxa/osu-scripts" target="_blank" rel="noopener">github repo</a></p>
     </div>
   </footer>
 

@@ -3,7 +3,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const DEFAULT_OUTPUT = "osu-guest-difficulties.txt";
+const DEFAULT_OUTPUT = "-";
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_CONCURRENCY = 6;
 const MAIN_BOX_TITLE = "giant list of gds";
@@ -25,15 +25,21 @@ function printHelp() {
   node find-osu-guest-difficulties.mjs <osu-profile-url-or-user-id> [options]
 
 Options:
-  --output=./guest-difficulties.txt   BBCode file to update, or "-" for JSON-only output (no file). Default: ${DEFAULT_OUTPUT}
+  --output=./guest-difficulties.txt   BBCode file to write, or "-" for no file (BBCode only in --json). Default: ${DEFAULT_OUTPUT}
   --modes=osu,taiko,fruits,mania      Only include these modes. Default: all
   --sort=beatmap-id                   Sort: beatmap-id, difficulty-updated, set-date. Default: beatmap-id
   --page-size=100                     Beatmapsets per request. Default: ${DEFAULT_PAGE_SIZE}
   --concurrency=6                     Full detail requests to run at once. Default: ${DEFAULT_CONCURRENCY}
   --max-pages=0                       Stop after N pages. 0 = no limit
-  --dry-run                           Print what would be added without changing the file
+  --dry-run                           Print what would be written without changing the file
   --verbose                           Print pagination/detail logs instead of the progress bar
   --json                              Print a single JSON object to stdout (human summary to stderr)
+  --line-template="{template}"        Custom BBCode for each difficulty
+  --status-template="{template}"      Custom BBCode for the status tag
+  --year-template="{template}"        Custom BBCode for year headers
+  --wrapper-template="{template}"     Custom BBCode for the main box wrapper
+  --notice-intro="text"               Text for {intro}; use empty string for none
+  --year-section-template="{tpl}"     One year block: {year_header}, {entries}, {year}, {count}
   --help                              Show this help
 
 Notes:
@@ -44,11 +50,9 @@ Notes:
   That public route currently returns ranked/loved guest beatmapsets only.
 
   The exporter keeps beatmaps whose mapper user_id matches the profile and
-  whose beatmapset creator is someone else, then appends only links not already
-  present in the output file.
-
-  Existing entries are refreshed with color-coded status tags, and the output
-  is written as one spoiler box with bold year headings inside one notice box.
+  whose beatmapset creator is someone else, then renders one spoiler box with
+  bold year headings inside one notice box. Default --output=- writes no file;
+  pass a path to also save BBCode to disk.
 `);
 }
 
@@ -64,6 +68,12 @@ function parseArgs(argv) {
     verbose: false,
     json: false,
     help: false,
+    lineTemplate: null,
+    statusTemplate: null,
+    yearTemplate: null,
+    wrapperTemplate: null,
+    noticeIntro: null,
+    yearSectionTemplate: null,
   };
   let target = null;
 
@@ -115,6 +125,36 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--sort=")) {
       options.sort = arg.slice("--sort=".length).trim();
+      continue;
+    }
+
+    if (arg.startsWith("--line-template=")) {
+      options.lineTemplate = arg.slice("--line-template=".length);
+      continue;
+    }
+
+    if (arg.startsWith("--status-template=")) {
+      options.statusTemplate = arg.slice("--status-template=".length);
+      continue;
+    }
+
+    if (arg.startsWith("--year-template=")) {
+      options.yearTemplate = arg.slice("--year-template=".length);
+      continue;
+    }
+
+    if (arg.startsWith("--wrapper-template=")) {
+      options.wrapperTemplate = arg.slice("--wrapper-template=".length);
+      continue;
+    }
+
+    if (arg.startsWith("--notice-intro=")) {
+      options.noticeIntro = arg.slice("--notice-intro=".length);
+      continue;
+    }
+
+    if (arg.startsWith("--year-section-template=")) {
+      options.yearSectionTemplate = arg.slice("--year-section-template=".length);
       continue;
     }
 
@@ -677,17 +717,34 @@ function groupByYear(difficulties) {
   return [...byYear.entries()].sort(([a], [b]) => Number(b) - Number(a));
 }
 
-function formatDifficulty(difficulty) {
-  const statusTag = formatStatusTag(difficulty.status);
-  return `[url=${difficulty.url}]${difficulty.artist} - ${difficulty.title} (${difficulty.version})[/url]${statusTag ? ` - ${statusTag}` : ""}`;
+function formatDifficulty(difficulty, options = {}) {
+  const statusTag = formatStatusTag(difficulty.status, options);
+  const template =
+    options.lineTemplate ||
+    "[url={url}]{artist} - {title} ({version})[/url][size=85][color={status_color}]({status_label})[/color][/size]";
+  const tag = STATUS_TAGS[String(difficulty.status || "").toLowerCase()];
+  
+  return template
+    .replace(/{url}/g, difficulty.url)
+    .replace(/{artist}/g, difficulty.artist)
+    .replace(/{title}/g, difficulty.title)
+    .replace(/{version}/g, difficulty.version)
+    .replace(/{status_color}/g, tag?.color || "#808080")
+    .replace(/{status_label}/g, tag?.label || difficulty.status || "Unknown")
+    .replace(/{status}/g, statusTag || "");
 }
 
-function formatStatusTag(status) {
+function formatStatusTag(status, options = {}) {
   const tag = STATUS_TAGS[String(status || "").toLowerCase()];
-  return tag ? `[size=85][color=${tag.color}](${tag.label})[/color][/size]` : null;
+  if (!tag) return null;
+
+  const template = options.statusTemplate || " [size=85][color={color}]({label})[/color][/size]";
+  return template
+    .replace(/{color}/g, tag.color)
+    .replace(/{label}/g, tag.label);
 }
 
-function refreshExistingEntries(existingText, difficulties) {
+function refreshExistingEntries(existingText, difficulties, options) {
   const difficultyByBeatmapId = new Map(
     difficulties.map((difficulty) => [String(difficulty.beatmapId), difficulty]),
   );
@@ -704,7 +761,7 @@ function refreshExistingEntries(existingText, difficulties) {
         return normalized;
       }
 
-      const replacement = formatDifficulty(difficulty);
+      const replacement = formatDifficulty(difficulty, options);
       if (replacement !== match) {
         updated += 1;
       }
@@ -736,11 +793,11 @@ function normalizeItemSpacing(existingText) {
   return { text, updated };
 }
 
-function renderMergedOutput(existingText, newDifficulties) {
+function renderMergedOutput(existingText, newDifficulties, options, user) {
   const existing = extractExistingOutput(existingText);
 
   for (const difficulty of newDifficulties) {
-    addEntry(existing.entriesByYear, difficulty.year, formatDifficulty(difficulty));
+    addEntry(existing.entriesByYear, difficulty.year, formatDifficulty(difficulty, options));
   }
 
   const totalEntries = [...existing.entriesByYear.values()].reduce((sum, entries) => sum + entries.length, 0);
@@ -748,7 +805,7 @@ function renderMergedOutput(existingText, newDifficulties) {
     return `${existingText.trimEnd()}\n`;
   }
 
-  const mainBox = renderMainBox(existing.entriesByYear, totalEntries);
+  const mainBox = renderMainBox(existing.entriesByYear, totalEntries, options, user);
   const preface = existing.preface.trimEnd();
   const suffix = existing.suffix.trim();
 
@@ -757,6 +814,22 @@ function renderMergedOutput(existingText, newDifficulties) {
     mainBox,
     suffix,
   ].filter(Boolean).join("\n\n") + "\n";
+}
+
+function renderFreshOutput(difficulties, options, user) {
+  const entriesByYear = new Map();
+
+  for (const difficulty of difficulties) {
+    addEntry(entriesByYear, difficulty.year, formatDifficulty(difficulty, options));
+  }
+
+  const totalEntries = difficulties.length;
+  if (totalEntries === 0) {
+    return "";
+  }
+
+  return `${renderMainBox(entriesByYear, totalEntries, options, user)}
+`;
 }
 
 function extractExistingOutput(text) {
@@ -844,19 +917,46 @@ function addEntry(entriesByYear, year, entry) {
   }
 }
 
-function renderMainBox(entriesByYear, totalEntries) {
+function effectiveNoticeIntro(options) {
+  if (Object.prototype.hasOwnProperty.call(options, "noticeIntro") && options.noticeIntro != null) {
+    return options.noticeIntro;
+  }
+  return NOTICE_INTRO;
+}
+
+function renderMainBox(entriesByYear, totalEntries, options = {}, user = {}) {
+  const yearTemplate = options.yearTemplate || "[b]{year} - {count}[/b]";
+  const yearSectionTemplate =
+    options.yearSectionTemplate || "{year_header}\n{entries}";
+
   const sections = [...entriesByYear.entries()]
     .sort(([a], [b]) => Number(b) - Number(a))
-    .map(([year, entries]) => `[b]${year} - ${entries.length}[/b]\n${entries.join("\n")}`);
+    .map(([year, entries]) => {
+      const yearHeader = yearTemplate
+        .replace(/{year}/g, year)
+        .replace(/{count}/g, String(entries.length));
+      const entriesText = entries.join("\n");
+      return yearSectionTemplate
+        .replace(/{year_header}/g, yearHeader)
+        .replace(/{entries}/g, entriesText)
+        .replace(/{year}/g, year)
+        .replace(/{count}/g, String(entries.length));
+    });
 
-  return `[box=${MAIN_BOX_TITLE} - ${totalEntries}]
-[notice]
-${NOTICE_INTRO}
+  const wrapperTemplate =
+    options.wrapperTemplate ||
+    "[box=giant list of gds - {total}]\n[notice]\n{intro}\n{sections}\n\n[/notice]\n[/box]";
 
-${sections.join("\n\n")}
+  const username = user.username || "";
+  const userId = user.id != null ? String(user.id) : "";
 
-[/notice]
-[/box]`;
+  return wrapperTemplate
+    .replace(/{title}/g, MAIN_BOX_TITLE)
+    .replace(/{total}/g, String(totalEntries))
+    .replace(/{intro}/g, effectiveNoticeIntro(options))
+    .replace(/{sections}/g, sections.join("\n\n"))
+    .replace(/{username}/g, username)
+    .replace(/{user_id}/g, userId);
 }
 
 function escapeRegExp(value) {
@@ -957,39 +1057,29 @@ async function main() {
     options,
   );
   const allDifficulties = collectGuestDifficulties(scan.beatmapsets, user, options);
-  const existingText = await readExistingOutput(options.output);
-  const refreshed = refreshExistingEntries(existingText, allDifficulties);
-  const existingBeatmapIds = findExistingBeatmapIds(existingText);
-  const newDifficulties = allDifficulties.filter((difficulty) => {
-    return !existingBeatmapIds.has(String(difficulty.beatmapId));
-  });
-  const mergedText = renderMergedOutput(refreshed.text, newDifficulties);
-  const spaced = normalizeItemSpacing(mergedText);
-  const outputChanged = spaced.text !== existingText;
+  const freshText = renderFreshOutput(allDifficulties, options, user);
+  const spaced = normalizeItemSpacing(freshText);
+  const outputChanged = true;
+  const rewrittenDifficulties = allDifficulties;
 
-  printSummary(user, options, scan, allDifficulties, newDifficulties, refreshed.updated, outputChanged);
+  printSummary(user, options, scan, allDifficulties, rewrittenDifficulties, 0, outputChanged);
 
   const out = options.json ? console.error : console.log;
-  const shouldWriteFile =
-    outputChanged && !options.dryRun && options.output !== "-";
   let fileWritten = false;
   let summaryMessage = "";
 
-  if (!outputChanged || options.dryRun) {
-    if (options.dryRun) {
-      summaryMessage = "Dry run only; output file was not changed.";
-      out("");
-      out(summaryMessage);
-    }
-  } else if (shouldWriteFile) {
-    await saveOutput(options.output, spaced.text);
-    fileWritten = true;
-    summaryMessage = `Updated ${refreshed.updated} existing entr${refreshed.updated === 1 ? "y" : "ies"}, rewrote the output into one spoiler/notice box, and added ${newDifficulties.length} new entr${newDifficulties.length === 1 ? "y" : "ies"} to ${options.output}`;
+  if (options.dryRun) {
+    summaryMessage = "Dry run only; fresh output file was not written.";
     out("");
     out(summaryMessage);
-  } else if (options.output === "-" && outputChanged && !options.dryRun) {
-    summaryMessage =
-      "Output path is \"-\"; merged BBCode is included in JSON only (no file written).";
+  } else if (options.output === "-") {
+    summaryMessage = "Output path is "-"; fresh BBCode is included in JSON only (no file written).";
+    out("");
+    out(summaryMessage);
+  } else {
+    await saveOutput(options.output, spaced.text);
+    fileWritten = true;
+    summaryMessage = `Wrote fresh output with ${allDifficulties.length} guest difficult${allDifficulties.length === 1 ? "y" : "ies"} to ${options.output}`;
     out("");
     out(summaryMessage);
   }
@@ -1002,8 +1092,8 @@ async function main() {
           options,
           scan,
           allDifficulties,
-          newDifficulties,
-          refreshed.updated,
+          rewrittenDifficulties,
+          0,
           outputChanged,
           fileWritten,
           spaced.text,

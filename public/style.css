@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
 
 *,
 *::before,
@@ -59,13 +61,15 @@ html {
     scrollbar-gutter: stable;
     scroll-behavior: smooth;
     scroll-padding-top: var(--nav-bar-offset);
+    overflow-x: clip;
 }
 
 body {
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     background: var(--bg-color);
-    overflow-x: hidden;
+    /* `hidden` breaks `position: sticky` for descendants; `clip` clips x overflow without that bug */
+    overflow-x: clip;
 }
 
 header.nav-bar {
@@ -585,6 +589,8 @@ a.btn:active {
         text-align: center !important;
         margin: 0 auto;
     }
+
+
 }
 
 .title {
@@ -828,6 +834,18 @@ a.btn:active {
     outline: none;
 }
 
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .hero-cta {
     margin-top: 1.5rem;
     display: flex;
@@ -956,8 +974,7 @@ a.btn:active {
 }
 
 .page-section {
-    margin-top: 4rem;
-    padding-bottom: 2rem;
+    margin-top: 8rem;
     scroll-margin-top: calc(var(--nav-bar-offset) + 0.75rem);
 }
 
@@ -1183,7 +1200,8 @@ a.btn:active {
     border-radius: 8px;
     color: var(--text-pink);
     font: inherit;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 400;
     cursor: pointer;
     padding: 4px 10px;
     text-decoration: underline;
@@ -1214,4 +1232,509 @@ a.btn:active {
     .span-2 {
         grid-column: auto;
     }
+}
+
+/* Tool Layout */
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.tools-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 28vw, 380px);
+  gap: 1.75rem;
+  align-items: start;
+  padding-top: 4rem;
+  padding-bottom: 2rem;
+}
+
+.tools-main {
+  min-width: 0;
+}
+
+.tools-main .page-section:first-child {
+  margin-top: 0;
+}
+
+.tools-results-dock {
+  position: sticky;
+  top: calc(var(--nav-bar-offset) + 0.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc(100dvh - var(--nav-bar-offset) - 1.5rem);
+  min-width: 0;
+}
+
+.tool-results-panel,
+.tool-results-terminal {
+  min-width: 0;
+  margin: 0;
+}
+
+.tool-results-panel {
+  flex: 1 1 auto;
+  min-height: auto;
+  overflow: auto;
+  transition: min-height 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.tool-results-terminal {
+  flex: 0 0 auto;
+}
+
+.results-heading {
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.results-body {
+  color: var(--text-muted);
+}
+
+.tool-results-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-light);
+}
+
+.tool-results-terminal .technical-log {
+  margin-top: 0;
+}
+
+/* Run log: override global Outfit from `*` — monospace terminal look */
+.tool-results-terminal .log-pre.terminal-log,
+.tool-results-terminal #run-results-log.terminal-log {
+  margin-top: 0;
+  min-height: 12rem;
+  max-height: min(28vh, 240px);
+  padding: 0.65rem 0.75rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  tab-size: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #050608;
+  border-radius: 6px;
+  box-shadow: var(--box-shadow), var(--border-highlight), var(--border-dark-highlight);
+}
+
+@keyframes terminal-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Blinking caret when the log has no text (pseudo-element does not affect :empty) */
+.tool-results-terminal #run-results-log.terminal-log:empty::after {
+  content: "|";
+  font-weight: 300;
+  animation: terminal-caret-blink 1.05s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-results-terminal #run-results-log.terminal-log:empty::after {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 1100px) {
+  .tools-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tools-results-dock {
+    position: static;
+    max-height: none;
+  }
+
+  .tool-results-panel {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .tool-results-terminal .log-pre.terminal-log,
+  .tool-results-terminal #run-results-log.terminal-log {
+    max-height: 16rem;
+  }
+}
+
+/* Sort control: shell like nav profile trigger + panel polish */
+.profile-style-select-wrap {
+  position: relative;
+}
+
+.profile-style-select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  background: center / contain no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.25L6 7.75l3.5-3.5' fill='none' stroke='%23ffffff' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 0.72;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.field .profile-style-select-wrap select.profile-style-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 2.15rem;
+  padding: 0.5rem 2.1rem 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: var(--border-active);
+  background: var(--bg-button);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.field .profile-style-select-wrap select.profile-style-select:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--btn-fill-hover);
+}
+
+.field .profile-style-select-wrap select.profile-style-select:focus {
+  outline: none;
+  border-color: rgba(255, 102, 171, 0.45);
+  background: rgba(255, 102, 171, 0.12);
+  box-shadow: 0 0 0 1px rgba(255, 102, 171, 0.2);
+}
+
+.profile-style-select-wrap:focus-within::after {
+  transform: rotate(180deg);
+}
+
+.field .profile-style-select-wrap select.profile-style-select option {
+  background: rgb(28, 30, 34);
+  color: var(--text-main);
+  padding: 0.5rem;
+}
+
+.tool-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: calc(var(--nav-bar-offset) + 1rem);
+}
+
+/* BBCode editor (guest difficulties) — unified template + reference */
+
+.guest-bbcode-editor-panel {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr;
+  gap: 1.25rem 1.5rem;
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-color);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .guest-bbcode-editor-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guest-bbcode-ref {
+  position: sticky;
+  top: calc(var(--nav-bar-offset) + 1rem);
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.78rem;
+}
+
+.guest-bbcode-ref .guest-bbcode-heading {
+  margin-top: 0;
+}
+
+.guest-bbcode-ref-lead {
+  margin: 0 0 0.75rem;
+  line-height: 1.45;
+  color: var(--text-light);
+}
+
+.guest-bbcode-ref-code {
+  font-size: 0.72rem;
+  word-break: break-all;
+}
+
+.guest-bbcode-ref-block {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.guest-bbcode-ref-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.guest-bbcode-ref-list {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.guest-bbcode-ref-list li {
+  margin: 0.15rem 0;
+}
+
+.guest-bbcode-ref-list code {
+  font-size: 0.76rem;
+  color: #e8eaef;
+}
+
+.guest-bbcode-ref-ex {
+  color: var(--text-light);
+  font-size: 0.72rem;
+}
+
+.guest-bbcode-ref-sample {
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 0.55rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  /* Stacked layout: do not pin the reference panel while scrolling the template */
+  .guest-bbcode-ref {
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.guest-bbcode-editor-main {
+  min-width: 0;
+}
+
+.guest-bbcode-intro {
+  margin-bottom: 0.65rem;
+}
+
+.guest-bbcode-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: var(--text-main);
+}
+
+.guest-bbcode-lead {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-light);
+}
+
+.guest-bbcode-lead code {
+  font-size: 0.78rem;
+}
+
+.guest-bbcode-unified-field {
+  margin-top: 0;
+}
+
+.guest-bbcode-unified {
+  margin-top: 0;
+  min-height: 320px;
+  line-height: 1.45;
+}
+
+.guest-bbcode-parse-hint.is-warn {
+  color: #ffb4b4;
+}
+
+.guest-bbcode-preview {
+  margin-top: 1rem;
+}
+
+.code-textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: #e8eaef;
+  padding: 12px;
+  width: 100%;
+  resize: vertical;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.code-textarea:focus {
+  outline: none;
+  border-color: var(--text-pink);
+  box-shadow: 0 0 0 2px rgba(255, 102, 171, 0.2);
+}
+
+.template-editor-toggle {
+  margin-top: 1rem;
+}
+
+.template-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.preview-area {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.preview-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.preview-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+
+
+.results-summary-line {
+  margin: 0 0 0.85rem;
+  color: var(--text-muted);
+}
+
+.bbcode-result-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+}
+
+.bbcode-result-toolbar .btn.is-active {
+  border-color: rgba(255, 102, 171, 0.45);
+  background: rgba(255, 102, 171, 0.16);
+  color: var(--text-main);
+}
+
+.bbcode-actions {
+  margin-top: 0.5rem;
+}
+
+.bbcode-rendered-preview {
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.85rem;
+  border-radius: 8px;
+  border: var(--border-active);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.bbcode-rendered-preview a {
+  color: var(--text-pink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bbcode-rendered-preview a:hover {
+  text-decoration: underline;
+}
+
+.bbcode-preview-box {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.bbcode-preview-box-title {
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.bbcode-preview-notice {
+  padding: 0.65rem;
+  border-left: 2px solid rgba(255, 102, 171, 0.75);
+  background: rgba(255, 102, 171, 0.06);
+  border-radius: 6px;
+}
+
+.bbcode-preview-small {
+  font-size: 0.85em;
+}
+
+.score-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }

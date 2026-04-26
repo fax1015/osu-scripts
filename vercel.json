@@ -6,6 +6,9 @@
   "functions": {
     "api/run.mjs": {
       "maxDuration": 300
+    },
+    "api/run/stream.mjs": {
+      "maxDuration": 300
     }
   }
 }
