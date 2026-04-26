@@ -101,16 +101,17 @@
 
       <div class="tools-page-layout">
         <div class="tools-main">
-      <section id="guest-difficulties" class="page-section" aria-labelledby="guest-heading">
-        <div class="section-intro">
-          <h2 id="guest-heading" class="section-title">guest difficulty BBCode list</h2>
-          <p class="section-lead">
-            outputs all guest difficulties made by a user in one text block. works best for your own guest diffs, as the
-            api may not show all guest difficulties
-          </p>
-        </div>
+          <section id="guest-difficulties" class="page-section" aria-labelledby="guest-heading">
+            <div class="section-intro">
+              <h2 id="guest-heading" class="section-title">guest difficulty BBCode list</h2>
+              <p class="section-lead">
+                outputs all guest difficulties made by a user in one text block. works best for your own guest diffs, as
+                the
+                api may not show all guest difficulties
+              </p>
+            </div>
 
-        <div class="panel">
+            <div class="panel">
               <form id="guest-form" class="tool-form">
                 <div class="tool-grid">
                   <div class="form-main">
@@ -123,7 +124,8 @@
                       <div class="field span-2">
                         <label for="guest-sort">sort by</label>
                         <div class="profile-style-select-wrap">
-                          <select id="guest-sort" class="profile-style-select" name="sort" aria-label="Sort guest maps by">
+                          <select id="guest-sort" class="profile-style-select" name="sort"
+                            aria-label="Sort guest maps by">
                             <option value="beatmap-id">Beatmap ID</option>
                             <option value="difficulty-updated">Difficulty updated</option>
                             <option value="set-date">Set date</option>
@@ -146,134 +148,153 @@
                     <input type="hidden" id="guest-concurrency" name="concurrency" value="6" aria-hidden="true">
                     <input type="hidden" id="guest-max-pages" name="maxPages" value="0" aria-hidden="true">
 
-                    <div class="form-actions">
-                      <button class="btn btn-run" type="submit">Run</button>
+                    <div class="form-actions btn-run-container">
+                      <button class="btn btn-run" type="submit">
+                        <div class="btn-run-content">
+                          <span>Run</span>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <div class="guest-bbcode-editor-panel">
                   <aside class="guest-bbcode-ref" aria-label="Placeholder reference">
-                <h3 class="guest-bbcode-heading">syntax</h3>
-                <p class="guest-bbcode-ref-lead">write normal BBCode, but with {tokens} for values that change.</p>
+                    <h3 class="guest-bbcode-heading">syntax</h3>
+                    <p class="guest-bbcode-ref-lead">write normal BBCode, but with {tokens} for values that change.</p>
 
-                <div class="guest-bbcode-ref-block">
-                  <p class="guest-bbcode-ref-title">Box / notice</p>
-                  <ul class="guest-bbcode-ref-list">
-                    <li><code>{total}</code> <span class="guest-bbcode-ref-ex">total map count for all years</span></li>
-                    <li><code>{username}</code> <span class="guest-bbcode-ref-ex">profile username</span></li>
-                    <li><code>{user_id}</code> <span class="guest-bbcode-ref-ex">profile numeric id</span></li>
-                  </ul>
-                </div>
-                <div class="guest-bbcode-ref-block">
-                  <p class="guest-bbcode-ref-title">Year line</p>
-                  <ul class="guest-bbcode-ref-list">
-                    <li><code>{year}</code> <span class="guest-bbcode-ref-ex">e.g. 2026</span></li>
-                    <li><code>{count}</code> <span class="guest-bbcode-ref-ex">total map count for specific year</span></li>
-                  </ul>
-                </div>
-                <div class="guest-bbcode-ref-block">
-                  <p class="guest-bbcode-ref-title">Beatmap line (after <code># osu-guest-line</code>)</p>
-                  <ul class="guest-bbcode-ref-list">
-                    <li><code>{url}</code> <span class="guest-bbcode-ref-ex">beatmap link</span></li>
-                    <li><code>{artist}</code> <span class="guest-bbcode-ref-ex">artist name</span></li>
-                    <li><code>{title}</code> <span class="guest-bbcode-ref-ex">romanised song title</span></li>
-                    <li><code>{version}</code> <span class="guest-bbcode-ref-ex">difficulty name</span></li>
-                    <li><code>{status_color}</code> <span class="guest-bbcode-ref-ex">hex colour for rank tag</span></li>
-                    <li><code>{status_label}</code> <span class="guest-bbcode-ref-ex">rank tag status label</span></li>
-                  </ul>
-                </div>
-                <div class="guest-bbcode-ref-block">
-                  <p class="guest-bbcode-ref-title">Example beatmap line</p>
-                  <pre class="guest-bbcode-ref-sample">[url={url}]{artist} - {title} ({version})[/url][size=85][color={status_color}]({status_label})[/color][/size]</pre>
-                </div>
-              </aside>
+                    <div class="guest-bbcode-ref-block">
+                      <p class="guest-bbcode-ref-title">Box / notice</p>
+                      <ul class="guest-bbcode-ref-list">
+                        <li><code>{total}</code> <span class="guest-bbcode-ref-ex">total map count for all years</span>
+                        </li>
+                        <li><code>{username}</code> <span class="guest-bbcode-ref-ex">profile username</span></li>
+                        <li><code>{user_id}</code> <span class="guest-bbcode-ref-ex">profile numeric id</span></li>
+                      </ul>
+                    </div>
+                    <div class="guest-bbcode-ref-block">
+                      <p class="guest-bbcode-ref-title">Year line</p>
+                      <ul class="guest-bbcode-ref-list">
+                        <li><code>{year}</code> <span class="guest-bbcode-ref-ex">e.g. 2026</span></li>
+                        <li><code>{count}</code> <span class="guest-bbcode-ref-ex">total map count for specific
+                            year</span></li>
+                      </ul>
+                    </div>
+                    <div class="guest-bbcode-ref-block">
+                      <p class="guest-bbcode-ref-title">Beatmap line (after <code># osu-guest-line</code>)</p>
+                      <ul class="guest-bbcode-ref-list">
+                        <li><code>{url}</code> <span class="guest-bbcode-ref-ex">beatmap link</span></li>
+                        <li><code>{artist}</code> <span class="guest-bbcode-ref-ex">artist name</span></li>
+                        <li><code>{title}</code> <span class="guest-bbcode-ref-ex">romanised song title</span></li>
+                        <li><code>{version}</code> <span class="guest-bbcode-ref-ex">difficulty name</span></li>
+                        <li><code>{status_color}</code> <span class="guest-bbcode-ref-ex">hex colour for rank tag</span>
+                        </li>
+                        <li><code>{status_label}</code> <span class="guest-bbcode-ref-ex">rank tag status label</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="guest-bbcode-ref-block">
+                      <p class="guest-bbcode-ref-title">Example beatmap line</p>
+                      <pre
+                        class="guest-bbcode-ref-sample">[url={url}]{artist} - {title} ({version})[/url][size=85][color={status_color}]({status_label})[/color][/size]</pre>
+                    </div>
+                  </aside>
 
-              <div class="guest-bbcode-editor-main">
-                <div class="guest-bbcode-intro">
-                  <h3 class="guest-bbcode-heading">BBCode template</h3>
-                  <p class="guest-bbcode-lead">template for the output. you can change the template to your liking, the tokens will be replaced with the actual values.</p>
-                </div>
-                <div class="field guest-bbcode-unified-field">
-                  <label for="guest-unified-template" class="visually-hidden">Guest BBCode unified template</label>
-                  <textarea id="guest-unified-template" class="code-textarea guest-bbcode-unified" rows="22"
-                    spellcheck="false" autocomplete="off" aria-describedby="guest-template-parse-hint"></textarea>
-                  <p id="guest-template-parse-hint" class="field-hint guest-bbcode-parse-hint" hidden></p>
-                </div>
+                  <div class="guest-bbcode-editor-main">
+                    <div class="guest-bbcode-intro">
+                      <h3 class="guest-bbcode-heading">BBCode template</h3>
+                      <p class="guest-bbcode-lead">template for the output. you can change the template to your liking,
+                        the tokens will be replaced with the actual values.</p>
+                    </div>
+                    <div class="field guest-bbcode-unified-field">
+                      <label for="guest-unified-template" class="visually-hidden">Guest BBCode unified template</label>
+                      <textarea id="guest-unified-template" class="code-textarea guest-bbcode-unified" rows="22"
+                        spellcheck="false" autocomplete="off" aria-describedby="guest-template-parse-hint"></textarea>
+                      <p id="guest-template-parse-hint" class="field-hint guest-bbcode-parse-hint" hidden></p>
+                    </div>
 
-                <div class="preview-area guest-bbcode-preview">
-                  <div class="preview-header">
-                    <p class="preview-title">Sample output</p>
-                    <button type="button" id="reset-guest-template" class="link-button btn-sm">Reset to defaults</button>
+                    <div class="preview-area guest-bbcode-preview">
+                      <div class="preview-header">
+                        <p class="preview-title">Sample output</p>
+                        <button type="button" id="reset-guest-template" class="link-button btn-sm">Reset to
+                          defaults</button>
+                      </div>
+                      <pre id="guest-template-preview" class="preview-content" aria-live="polite"></pre>
+                    </div>
                   </div>
-                  <pre id="guest-template-preview" class="preview-content" aria-live="polite"></pre>
                 </div>
-              </div>
-            </div>
               </form>
-        </div>
-      </section>
-
-      <section id="oldest-scores" class="page-section" aria-labelledby="oldest-heading">
-        <div class="section-intro">
-          <h2 id="oldest-heading" class="section-title">find oldest scores</h2>
-          <p class="section-lead">
-            searches public score feeds for the oldest scores. not necessarily your real first play, but the first one visible. it tries its best :D
-          </p>
-        </div>
-
-        <div class="panel">
-          <form id="oldest-form" class="tool-form">
-            <div class="form-grid">
-              <div class="field span-2">
-                <label for="oldest-target">Profile, username, or user ID</label>
-                <input id="oldest-target" name="target" type="text" autocomplete="off"
-                  placeholder="https://osu.ppy.sh/users/124493">
-              </div>
-              <div class="field">
-                <label for="oldest-beatmap">Beatmap ID</label>
-                <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off" placeholder="optional; eg: 2778999">
-              </div>
-              <div class="field" hidden>
-                <label for="oldest-save-index">Save index</label>
-                <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off" placeholder="scores.json">
-              </div>
-              <div class="field" hidden>
-                <label for="oldest-page-size">Page size</label>
-                <input id="oldest-page-size" name="pageSize" type="number" min="1" step="1">
-              </div>
-              <div class="field" hidden>
-                <label for="oldest-max-pages">Max pages (0 = no limit)</label>
-                <input id="oldest-max-pages" name="maxPages" type="number" min="0" step="1">
-              </div>
-              <div class="field">
-                <label for="oldest-result-count">Scores to list</label>
-                <input id="oldest-result-count" name="resultCount" type="number" min="1" max="100" step="1" value="5" title="How many oldest scores to show in results (1–100)">
-              </div>
             </div>
-            <fieldset class="field-set">
-              <legend>Modes</legend>
-              <div class="chip-group">
-                <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
-                <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
-                <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
-                <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
-              </div>
-            </fieldset>
-            <fieldset class="field-set">
-              <legend>Feeds</legend>
-              <div class="chip-group">
-                <label class="chip"><input type="checkbox" name="feeds" value="firsts"> firsts</label>
-                <label class="chip"><input type="checkbox" name="feeds" value="best"> best</label>
-                <label class="chip"><input type="checkbox" name="feeds" value="recent"> recent</label>
-              </div>
-            </fieldset>
-            <div class="form-actions">
-              <button class="btn btn-run" type="submit">Run</button>
+          </section>
+
+          <section id="oldest-scores" class="page-section" aria-labelledby="oldest-heading">
+            <div class="section-intro">
+              <h2 id="oldest-heading" class="section-title">find oldest scores</h2>
+              <p class="section-lead">
+                searches public score feeds for the oldest scores. not necessarily your real first play, but the first
+                one visible. it tries its best :D
+              </p>
             </div>
-          </form>
-        </div>
-      </section>
+
+            <div class="panel">
+              <form id="oldest-form" class="tool-form">
+                <div class="form-grid">
+                  <div class="field span-2">
+                    <label for="oldest-target">Profile, username, or user ID</label>
+                    <input id="oldest-target" name="target" type="text" autocomplete="off"
+                      placeholder="https://osu.ppy.sh/users/124493">
+                  </div>
+                  <div class="field">
+                    <label for="oldest-beatmap">Beatmap ID</label>
+                    <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off"
+                      placeholder="optional; eg: 2778999">
+                  </div>
+                  <div class="field" hidden>
+                    <label for="oldest-save-index">Save index</label>
+                    <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off"
+                      placeholder="scores.json">
+                  </div>
+                  <div class="field" hidden>
+                    <label for="oldest-page-size">Page size</label>
+                    <input id="oldest-page-size" name="pageSize" type="number" min="1" step="1">
+                  </div>
+                  <div class="field" hidden>
+                    <label for="oldest-max-pages">Max pages (0 = no limit)</label>
+                    <input id="oldest-max-pages" name="maxPages" type="number" min="0" step="1">
+                  </div>
+                  <div class="field">
+                    <label for="oldest-result-count">Scores to list</label>
+                    <input id="oldest-result-count" name="resultCount" type="number" min="1" max="100" step="1"
+                      value="5" title="How many oldest scores to show in results (1–100)">
+                  </div>
+                </div>
+                <fieldset class="field-set">
+                  <legend>Modes</legend>
+                  <div class="chip-group">
+                    <label class="chip"><input type="checkbox" name="modes" value="osu"> osu!</label>
+                    <label class="chip"><input type="checkbox" name="modes" value="taiko"> taiko</label>
+                    <label class="chip"><input type="checkbox" name="modes" value="fruits"> fruits</label>
+                    <label class="chip"><input type="checkbox" name="modes" value="mania"> mania</label>
+                  </div>
+                </fieldset>
+                <fieldset class="field-set">
+                  <legend>Feeds</legend>
+                  <div class="chip-group">
+                    <label class="chip"><input type="checkbox" name="feeds" value="firsts"> firsts</label>
+                    <label class="chip"><input type="checkbox" name="feeds" value="best"> best</label>
+                    <label class="chip"><input type="checkbox" name="feeds" value="recent"> recent</label>
+                  </div>
+                </fieldset>
+                <div class="form-actions btn-run-container">
+                  <button class="btn btn-run" type="submit">
+                    <div class="btn-run-content">
+                      <span>Run</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
         </div>
 
         <aside class="tools-results-dock" aria-label="Script run output">
@@ -336,7 +357,8 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <p>unaffiliated with osu! or ppy...</p>
-      <p><a id="footer-repo" class="inline-link" href="https://github.com/faxaxaxa/osu-scripts" target="_blank" rel="noopener">github repo</a></p>
+      <p><a id="footer-repo" class="inline-link" href="https://github.com/faxaxaxa/osu-scripts" target="_blank"
+          rel="noopener">github repo</a></p>
     </div>
   </footer>
 
