@@ -9,7 +9,7 @@ npm install
 npm start
 ```
 
-Open **http://127.0.0.1:4173** (or the URL printed in the terminal). Use **Close app** to stop the server.
+Open **http://127.0.0.1:4173** (or the URL printed in the terminal). Use **Close app** to stop the server. The script tools in the web UI are shown only after you **log in with osu!**.
 
 The header **Look A / B / C** control switches between three layout themes (choice is saved in `localStorage`, and `?design=2` or `?design=3` in the URL loads B or C on first paint).
 
@@ -27,11 +27,16 @@ The UI saves script options and OAuth tokens in **`.osu-script-ui-settings.json`
 
 ### OAuth (local or Vercel)
 
-1. Create an OAuth application on your osu! account.
-2. Set the application’s **callback URL** to exactly what the site shows (for local: `http://127.0.0.1:4173/auth/osu/callback`; for Vercel: `https://<your-deployment>.vercel.app/auth/osu/callback`).
-3. Paste **Client ID** and **Client Secret** under **Account & setup**, click **Save settings**, then **Log in**.
+The web UI no longer asks users for a client id, secret, or callback URL. The **operator** creates one OAuth application on [osu!](https://osu.ppy.sh/home/account/edit#new-oauth-application) and configures the **server** with environment variables (see [osu! OAuth documentation](https://osu.ppy.sh/docs/#oauth)):
 
-Reference: https://osu.ppy.sh/docs/#oauth
+1. **Callback URL** (must match the URL your server uses, path `/auth/osu/callback`):
+   - Local: `http://127.0.0.1:4173/auth/osu/callback` (or your `PORT` / `HOST` if you changed them).
+   - Vercel: `https://<your-deployment>.vercel.app/auth/osu/callback`.
+2. Set **`OSU_OAUTH_CLIENT_ID`** and **`OSU_OAUTH_CLIENT_SECRET`** in the environment (Vercel project settings, or your shell before `npm start`).
+
+**Legacy (optional):** older installs can still use client id/secret stored in `.osu-script-ui-settings.json` until you migrate; when both env vars are set, those fields are no longer read from the file and are stripped on save.
+
+3. **Log in** from the app header; users never paste app credentials in the browser.
 
 ### Port and host (local only)
 
@@ -46,8 +51,8 @@ The server binds to **`127.0.0.1`** by default (`HOST` env overrides it).
 
 1. Push this repository to GitHub and import it in the [Vercel dashboard](https://vercel.com/new), or run `npx vercel` from the project root.
 2. In the Vercel project, add a **Blob** store (Storage → Create → Blob) and copy **`BLOB_READ_WRITE_TOKEN`** into **Project → Environment variables**. Without it, production cannot persist OAuth and form settings across cold starts.
-3. Set **`OSU_ACCESS_TOKEN`** (optional) if you want the server to always have a token without logging in through the UI.
-4. In your osu! OAuth app, set the callback URL to **`https://<your-project>.vercel.app/auth/osu/callback`** (same path the UI displays after deploy).
+3. Set **`OSU_OAUTH_CLIENT_ID`** and **`OSU_OAUTH_CLIENT_SECRET`** from your osu! OAuth app (see **OAuth (local or Vercel)** above), and an optional **`OSU_ACCESS_TOKEN`** if you want the server to always have a token for scripts without anyone logging in through the UI.
+4. Register the app’s callback URL on osu! as **`https://<your-project>.vercel.app/auth/osu/callback`**.
 5. Redeploy after changing env vars.
 
 **Guest exporter on Vercel:** the server runs the script with **`--output=-`**, so the BBCode is returned in the JSON response and can be **downloaded from the browser** instead of being written on the server filesystem.

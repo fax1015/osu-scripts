@@ -1,13 +1,9 @@
 const guestForm = document.querySelector("#guest-form");
 const oldestForm = document.querySelector("#oldest-form");
 const tokenStatus = document.querySelector("#token-status");
-const oauthPanel = document.querySelector("#oauth-panel");
-const clientIdInput = document.querySelector("#oauth-client-id");
-const clientSecretInput = document.querySelector("#oauth-client-secret");
-const callbackUrlInput = document.querySelector("#oauth-callback-url");
-const saveAccountButton = document.querySelector("#save-settings-account");
 const saveMenuButton = document.querySelector("#save-settings-menu");
 const loginButton = document.querySelector("#login-osu");
+const heroLoginButton = document.querySelector("#hero-login-osu");
 const logoutButton = document.querySelector("#logout-osu");
 const closeAppButton = document.querySelector("#close-app");
 const accountAvatar = document.querySelector("#account-avatar");
@@ -17,8 +13,6 @@ const navAuthUser = document.querySelector("#nav-auth-user");
 const profileMenuTrigger = document.querySelector("#profile-menu-trigger");
 const profileMenuPanel = document.querySelector("#profile-menu-panel");
 const accountFeedback = document.querySelector("#account-feedback");
-const copyCallbackButton = document.querySelector("#copy-callback");
-const showOauthSetup = document.querySelector("#show-oauth-setup");
 const footerRepo = document.querySelector("#footer-repo");
 const navBurger = document.querySelector("#nav-burger");
 const navAnchors = document.querySelector("#nav-anchors");
@@ -257,8 +251,11 @@ function setAccountFeedback(text, toneClass = "") {
 }
 
 function setLoginHint(text) {
-  if (loginButton) {
-    loginButton.title = text || "";
+  const t = text || "";
+  for (const btn of [loginButton, heroLoginButton]) {
+    if (btn) {
+      btn.title = t;
+    }
   }
 }
 
@@ -278,6 +275,9 @@ function openProfileMenu() {
 }
 
 function toggleProfileMenu() {
+  if (!profileMenuPanel) {
+    return;
+  }
   if (!profileMenuPanel.classList.contains("is-open")) {
     openProfileMenu();
   } else {
@@ -324,8 +324,8 @@ function suppressNavAnchorsBreakpointTransition() {
 }
 
 function onDocumentClickCloseMenu(event) {
-  if (navAuthUser.hidden) return;
-  if (!profileMenuPanel.classList.contains("is-open")) return;
+  if (!navAuthUser || navAuthUser.hidden) return;
+  if (!profileMenuPanel?.classList.contains("is-open")) return;
   if (!event.target.closest(".nav-account-dropdown")) {
     closeProfileMenu();
   }
@@ -363,13 +363,13 @@ async function init() {
   showHashMessages();
   setupFooterRepo();
 
-  saveAccountButton.addEventListener("click", saveSettings);
-  saveMenuButton.addEventListener("click", () => {
+  saveMenuButton?.addEventListener("click", () => {
     closeProfileMenu();
     saveSettings();
   });
   loginButton.addEventListener("click", loginWithOsu);
-  profileMenuTrigger.addEventListener("click", (event) => {
+  heroLoginButton?.addEventListener("click", loginWithOsu);
+  profileMenuTrigger?.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleProfileMenu();
   });
@@ -414,13 +414,6 @@ async function init() {
     );
   }
 
-  copyCallbackButton.addEventListener("click", copyCallbackUrl);
-  showOauthSetup.addEventListener("click", () => {
-    oauthPanel.hidden = false;
-    window.location.hash = "setup";
-    clientIdInput.focus();
-  });
-
   const guestSortTrigger = document.getElementById("guest-sort-trigger");
   const guestSortPanel = document.getElementById("guest-sort-panel");
   const guestSortInput = document.getElementById("guest-sort");
@@ -455,8 +448,8 @@ async function init() {
     });
   });
 
-  guestForm.addEventListener("submit", (event) => runScript(event, "guest"));
-  oldestForm.addEventListener("submit", (event) => runScript(event, "oldest"));
+  guestForm?.addEventListener("submit", (event) => runScript(event, "guest"));
+  oldestForm?.addEventListener("submit", (event) => runScript(event, "oldest"));
 
   terminalBtnClose?.addEventListener("click", () => {
     if (runResultsLog) runResultsLog.textContent = "";
@@ -597,13 +590,20 @@ function parseHashQuery() {
 }
 
 function showHashMessages() {
-  const { path, params } = parseHashQuery();
-  if (params.get("oauthSetup") || path === "setup") {
-    oauthPanel.hidden = false;
-  }
+  const { params } = parseHashQuery();
   if (params.get("oauthError") === "invalid_client") {
     const msg =
-      "osu! rejected the saved Client ID / Secret. Update them under Account and save, then try Log in again.";
+      "Sign-in could not be completed. The site operator should verify OSU_OAUTH_CLIENT_ID, OSU_OAUTH_CLIENT_SECRET, and the callback URL on osu.ppy.sh.";
+    if (loggedIn(latestSettings)) {
+      tokenStatus.textContent = msg;
+      tokenStatus.className = "token-status profile-menu-status is-warn";
+    } else {
+      setAccountFeedback(msg, "is-warn");
+      setLoginHint(msg);
+    }
+  }
+  if (params.get("oauthError") === "unconfigured") {
+    const msg = "Sign-in is not enabled: the server is missing OSU_OAUTH_CLIENT_ID and OSU_OAUTH_CLIENT_SECRET.";
     if (loggedIn(latestSettings)) {
       tokenStatus.textContent = msg;
       tokenStatus.className = "token-status profile-menu-status is-warn";
@@ -648,49 +648,45 @@ async function fetchJson(url, options = {}) {
 function applySettings(settings) {
   const g = settings.guest || {};
   const o = settings.oldest;
-  const oauth = settings.oauth;
 
-  guestForm.querySelector("#guest-target").value = g.target || "";
-  
-  const sortVal = g.sort || "beatmap-id";
-  guestForm.querySelector("#guest-sort").value = sortVal;
-  const sortOpt = document.querySelector(`.sort-option[data-value="${sortVal}"]`);
-  if (sortOpt && document.getElementById("guest-sort-display")) {
-    document.getElementById("guest-sort-display").textContent = sortOpt.textContent;
-    document.querySelectorAll(".sort-option").forEach(o => o.setAttribute("aria-selected", "false"));
-    sortOpt.setAttribute("aria-selected", "true");
+  if (guestForm) {
+    guestForm.querySelector("#guest-target").value = g.target || "";
+
+    const sortVal = g.sort || "beatmap-id";
+    guestForm.querySelector("#guest-sort").value = sortVal;
+    const sortOpt = document.querySelector(`.sort-option[data-value="${sortVal}"]`);
+    if (sortOpt && document.getElementById("guest-sort-display")) {
+      document.getElementById("guest-sort-display").textContent = sortOpt.textContent;
+      document.querySelectorAll(".sort-option").forEach((x) => x.setAttribute("aria-selected", "false"));
+      sortOpt.setAttribute("aria-selected", "true");
+    }
+
+    guestForm.querySelector("#guest-page-size").value = String(g.pageSize ?? "");
+    guestForm.querySelector("#guest-concurrency").value = String(g.concurrency ?? "");
+    guestForm.querySelector("#guest-max-pages").value = String(g.maxPages ?? "");
+
+    guestForm.querySelectorAll('input[name="modes"]').forEach((input) => {
+      input.checked = Array.isArray(g.modes) && g.modes.includes(input.value);
+    });
   }
 
-  guestForm.querySelector("#guest-page-size").value = String(g.pageSize ?? "");
-  guestForm.querySelector("#guest-concurrency").value = String(g.concurrency ?? "");
-  guestForm.querySelector("#guest-max-pages").value = String(g.maxPages ?? "");
+  if (oldestForm) {
+    oldestForm.querySelector("#oldest-target").value = o.target || "";
+    oldestForm.querySelector("#oldest-beatmap").value = o.beatmapId || "";
+    oldestForm.querySelector("#oldest-save-index").value = o.saveIndex || "";
+    oldestForm.querySelector("#oldest-page-size").value = String(o.pageSize ?? "");
+    oldestForm.querySelector("#oldest-max-pages").value = String(o.maxPages ?? "");
+    oldestForm.querySelector("#oldest-result-count").value = String(
+      o.resultCount != null ? o.resultCount : 5,
+    );
 
-  guestForm.querySelectorAll('input[name="modes"]').forEach((input) => {
-    input.checked = Array.isArray(g.modes) && g.modes.includes(input.value);
-  });
-
-  oldestForm.querySelector("#oldest-target").value = o.target || "";
-  oldestForm.querySelector("#oldest-beatmap").value = o.beatmapId || "";
-  oldestForm.querySelector("#oldest-save-index").value = o.saveIndex || "";
-  oldestForm.querySelector("#oldest-page-size").value = String(o.pageSize ?? "");
-  oldestForm.querySelector("#oldest-max-pages").value = String(o.maxPages ?? "");
-  oldestForm.querySelector("#oldest-result-count").value = String(
-    o.resultCount != null ? o.resultCount : 5,
-  );
-
-  oldestForm.querySelectorAll('input[name="modes"]').forEach((input) => {
-    input.checked = Array.isArray(o.modes) && o.modes.includes(input.value);
-  });
-  oldestForm.querySelectorAll('input[name="feeds"]').forEach((input) => {
-    input.checked = Array.isArray(o.feeds) && o.feeds.includes(input.value);
-  });
-
-  clientIdInput.value = oauth.clientId || "";
-  clientSecretInput.value = "";
-  clientSecretInput.placeholder = oauth.hasClientSecret
-    ? "Leave blank to keep saved secret"
-    : "Paste client secret from osu!";
-  callbackUrlInput.value = oauth.callbackUrl || "";
+    oldestForm.querySelectorAll('input[name="modes"]').forEach((input) => {
+      input.checked = Array.isArray(o.modes) && o.modes.includes(input.value);
+    });
+    oldestForm.querySelectorAll('input[name="feeds"]').forEach((input) => {
+      input.checked = Array.isArray(o.feeds) && o.feeds.includes(input.value);
+    });
+  }
 
   if (guestUnifiedTemplate) {
     const d = defaultGuestParts();
@@ -746,22 +742,16 @@ function readOldestPayload() {
 }
 
 function buildSaveBody() {
-  const guest = readGuestPayload();
-  const oldest = readOldestPayload();
-  const oauth = {
-    clientId: clientIdInput.value.trim(),
-  };
-  const secret = clientSecretInput.value.trim();
-  if (secret) {
-    oauth.clientSecret = secret;
-  }
-  return { guest, oldest, oauth };
+  const guest = guestForm ? readGuestPayload() : latestSettings?.guest;
+  const oldest = oldestForm ? readOldestPayload() : latestSettings?.oldest;
+  return { guest, oldest };
 }
 
 async function saveSettings() {
   const wasLoggedIn = loggedIn(latestSettings);
-  saveAccountButton.disabled = true;
-  saveMenuButton.disabled = true;
+  if (saveMenuButton) {
+    saveMenuButton.disabled = true;
+  }
   try {
     latestSettings = settingsWithMigratedGuest(
       await fetchJson("/api/settings", {
@@ -786,15 +776,42 @@ async function saveSettings() {
       setAccountFeedback(error.message, "is-warn");
     }
   } finally {
-    saveAccountButton.disabled = false;
-    saveMenuButton.disabled = false;
+    if (saveMenuButton) {
+      saveMenuButton.disabled = false;
+    }
+  }
+}
+
+function syncLoginButtonState(settings) {
+  if (!loginButton && !heroLoginButton) {
+    return;
+  }
+  if (settings?.oauth?.loginAvailable === false) {
+    for (const btn of [loginButton, heroLoginButton]) {
+      if (btn) {
+        btn.disabled = true;
+        btn.title = "Sign-in is not enabled (server needs OSU_OAUTH_CLIENT_ID and OSU_OAUTH_CLIENT_SECRET).";
+      }
+    }
+    return;
+  }
+  for (const btn of [loginButton, heroLoginButton]) {
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute("title");
+    }
   }
 }
 
 function updateTokenStatus(settings) {
-  const { oauth, hasEnvAccessToken, hasUsableAccessToken } = settings;
+  const { oauth } = settings;
   const user = oauth.loggedInUser;
   const signedIn = loggedIn(settings);
+
+  document.body.classList.toggle("is-signed-in", signedIn);
+
+  syncLoginButtonState(settings);
+  updateAccountPageLead(settings);
 
   navAuthGuest.hidden = signedIn;
   navAuthUser.hidden = !signedIn;
@@ -820,47 +837,38 @@ function updateTokenStatus(settings) {
     return;
   }
 
-  if (hasEnvAccessToken) {
-    setAccountFeedback(
-      "This server uses OSU_ACCESS_TOKEN from the environment for script runs (no profile login required).",
-      "is-ok",
-    );
-    setLoginHint("");
-    return;
-  }
-
-  if (oauth.hasSavedAccessToken && oauth.isExpired && !oauth.canRefresh) {
-    setAccountFeedback(
-      "Saved osu! login expired. Add Client Secret under Account, save, or log in again.",
-      "is-warn",
-    );
-    setLoginHint("Saved login expired — update Client Secret in Account, then Save.");
-    return;
-  }
-
-  if (oauth.hasSavedAccessToken && oauth.isExpired && oauth.canRefresh) {
-    setAccountFeedback(
-      "Saved token expired — it will refresh on the next script run if the secret is valid.",
-      "is-warn",
-    );
-    setLoginHint("");
-    return;
-  }
-
-  if (!hasUsableAccessToken) {
-    setAccountFeedback(
-      "Not logged in — guest export uses public ranked/loved data only. Sign in for full guest search on your maps.",
-      "",
-    );
-    setLoginHint("");
-    return;
-  }
-
-  setAccountFeedback("Ready — optional: sign in with osu! for authenticated guest scans.", "is-ok");
+  setAccountFeedback("");
   setLoginHint("");
 }
 
+function updateAccountPageLead(settings) {
+  const leadOk = document.getElementById("account-lead-available");
+  const leadNo = document.getElementById("account-lead-unavailable");
+  const leadIn = document.getElementById("account-lead-signed-in");
+  const nameEl = document.getElementById("account-signed-in-name");
+  if (!leadOk || !leadNo) {
+    return;
+  }
+  if (loggedIn(settings) && leadIn && nameEl) {
+    nameEl.textContent = settings.oauth?.loggedInUser?.username || "";
+    leadOk.hidden = true;
+    leadNo.hidden = true;
+    leadIn.hidden = false;
+    return;
+  }
+  if (leadIn) {
+    leadIn.hidden = true;
+  }
+  const showUnavailable =
+    Boolean(settings?.oauth) && "loginAvailable" in settings.oauth && !settings.oauth.loginAvailable;
+  leadOk.hidden = showUnavailable;
+  leadNo.hidden = !showUnavailable;
+}
+
 function loginWithOsu() {
+  if (latestSettings?.oauth?.loginAvailable === false) {
+    return;
+  }
   window.location.href = "/auth/osu/start";
 }
 
@@ -893,20 +901,6 @@ async function closeApp() {
     tokenStatus.className = "token-status profile-menu-status is-warn";
   } finally {
     closeAppButton.disabled = false;
-  }
-}
-
-async function copyCallbackUrl() {
-  const value = callbackUrlInput.value;
-  try {
-    await navigator.clipboard.writeText(value);
-    copyCallbackButton.textContent = "Copied";
-    setTimeout(() => {
-      copyCallbackButton.textContent = "Copy callback";
-    }, 1600);
-  } catch {
-    callbackUrlInput.select();
-    document.execCommand("copy");
   }
 }
 
@@ -1216,6 +1210,9 @@ async function fetchRunResult(payload, logEl) {
 
 async function runScript(event, script) {
   event.preventDefault();
+  if (!loggedIn(latestSettings)) {
+    return;
+  }
   const form = script === "guest" ? guestForm : oldestForm;
   const submit = form.querySelector('button[type="submit"]');
   const target =

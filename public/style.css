@@ -41,6 +41,26 @@
   margin: 0;
 }
 
+/* Index: tools + in-page nav; toggled with body.is-signed-in in app.js */
+body:not(.is-signed-in) .signed-in-only {
+  display: none !important;
+}
+
+body.is-signed-in .hero-sign-in-prompt {
+  display: none;
+}
+
+.hero-sign-in-prompt {
+  margin-top: 0.75rem;
+  max-width: fit-content;
+  text-align: left;
+  line-height: 1.35;
+  white-space: normal;
+  height: auto;
+  min-height: 2.5rem;
+  padding: 0.5rem 14px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     interpolate-size: allow-keywords;
@@ -274,6 +294,7 @@ h6 {
 .nav-auth-user:not([hidden]) {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .nav-account-dropdown {
@@ -289,6 +310,12 @@ h6 {
   padding: 4px 12px;
   border-radius: 8px;
   cursor: pointer;
+  backdrop-filter: blur(24px);
+}
+
+.btn-login-osu:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-profile-trigger {
@@ -384,6 +411,11 @@ h6 {
   color: var(--text-main);
   font-size: 0.88rem;
   cursor: pointer;
+  box-sizing: border-box;
+}
+
+a.profile-menu-item {
+  text-decoration: none;
 }
 
 .token-status {
@@ -419,6 +451,11 @@ h6 {
   color: var(--text-muted);
   flex: 1;
   min-width: 12rem;
+}
+
+.main-content > .account-feedback:first-child {
+  margin: 0 0 0.75rem;
+  max-width: 48rem;
 }
 
 .account-feedback.is-ok {

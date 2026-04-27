@@ -11,7 +11,7 @@
 </head>
 
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">skip to content</a>
 
   <header class="nav-bar">
     <div class="nav-outer">
@@ -22,14 +22,14 @@
           <p>scripts</p>
         </a>
 
-        <button type="button" id="nav-burger" class="nav-burger" aria-expanded="false" aria-controls="nav-anchors"
+        <button type="button" id="nav-burger" class="nav-burger signed-in-only" aria-expanded="false" aria-controls="nav-anchors"
           aria-label="Open sections menu">
           <span class="nav-burger-bar" aria-hidden="true"></span>
           <span class="nav-burger-bar" aria-hidden="true"></span>
           <span class="nav-burger-bar" aria-hidden="true"></span>
         </button>
 
-        <nav id="nav-anchors" class="nav-anchors" aria-label="Page sections">
+        <nav id="nav-anchors" class="nav-anchors signed-in-only" aria-label="Page sections">
           <a href="#guest-difficulties">guest diff bbcode</a>
           <a href="#oldest-scores">find oldest scores</a>
         </nav>
@@ -50,11 +50,12 @@
                 </svg>
               </button>
               <div id="profile-menu-panel" class="profile-menu-panel" role="menu" aria-hidden="true">
-                <p id="token-status" class="token-status profile-menu-status" role="status">Checking login…</p>
-                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">Save
+                <p id="token-status" class="token-status profile-menu-status" role="status">checking login…</p>
+                <a href="account.html" class="profile-menu-item" role="menuitem">account</a>
+                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">save
                   settings</button>
-                <button type="button" id="logout-osu" class="profile-menu-item" role="menuitem">Log out</button>
-                <button type="button" id="close-app" class="profile-menu-item" role="menuitem" hidden>Close app</button>
+                <button type="button" id="logout-osu" class="profile-menu-item" role="menuitem">log out</button>
+                <button type="button" id="close-app" class="profile-menu-item" role="menuitem" hidden>close app</button>
               </div>
             </div>
           </div>
@@ -65,6 +66,7 @@
 
   <main id="main">
     <div class="main-content">
+      <p id="account-feedback" class="account-feedback" role="status" hidden></p>
       <section id="home" class="hero" aria-label="Introduction">
         <div class="hero-bg-decor" aria-hidden="true">
           <span class="hero-axis-line hero-axis-line--a"></span>
@@ -85,11 +87,14 @@
           <p class="hero-subtitle">
             not much here yet, still a work in progress
           </p>
-          <div class="hero-cta">
+          <button type="button" id="hero-login-osu" class="btn-login-osu hero-sign-in-prompt">
+            login with osu!
+          </button>
+          <div class="hero-cta signed-in-only">
             <a class="btn btn-primary" href="#guest-difficulties">guest diff bbcode</a>
             <a class="btn btn-secondary" href="#oldest-scores">find oldest scores</a>
           </div>
-          <a href="#guest-difficulties" class="hero-scroll-hint">
+          <a href="#guest-difficulties" class="hero-scroll-hint signed-in-only">
             <span class="visually-hidden">Scroll to tools</span>
             <svg class="hero-scroll-hint-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
@@ -114,6 +119,7 @@
         </div>
       </section>
 
+      <div class="signed-in-only" id="tools-shell" aria-label="Script tools">
       <div class="divider"></div>
 
       <div class="tools-page-layout">
@@ -122,9 +128,7 @@
             <div class="section-intro">
               <h2 id="guest-heading" class="section-title">guest difficulty BBCode list</h2>
               <p class="section-lead">
-                outputs all guest difficulties made by a user in one text block. works best for your own guest diffs, as
-                the
-                api may not show all guest difficulties
+                outputs all guest difficulties made by a user in one text block. only shows ranked and loved difficulties if not your account
               </p>
             </div>
 
@@ -187,7 +191,7 @@
                     <p class="guest-bbcode-ref-lead">write normal BBCode, but with {tokens} for values that change.</p>
 
                     <div class="guest-bbcode-ref-block">
-                      <p class="guest-bbcode-ref-title">Box / notice</p>
+                      <p class="guest-bbcode-ref-title">General</p>
                       <ul class="guest-bbcode-ref-list">
                         <li><code>{total}</code> <span class="guest-bbcode-ref-ex">total map count for all years</span>
                         </li>
@@ -196,7 +200,7 @@
                       </ul>
                     </div>
                     <div class="guest-bbcode-ref-block">
-                      <p class="guest-bbcode-ref-title">Year line</p>
+                      <p class="guest-bbcode-ref-title">Year</p>
                       <ul class="guest-bbcode-ref-list">
                         <li><code>{year}</code> <span class="guest-bbcode-ref-ex">e.g. 2026</span></li>
                         <li><code>{count}</code> <span class="guest-bbcode-ref-ex">total map count for specific
@@ -204,7 +208,7 @@
                       </ul>
                     </div>
                     <div class="guest-bbcode-ref-block">
-                      <p class="guest-bbcode-ref-title">Beatmap line (after <code># osu-guest-line</code>)</p>
+                      <p class="guest-bbcode-ref-title">Beatmap</p>
                       <ul class="guest-bbcode-ref-list">
                         <li><code>{url}</code> <span class="guest-bbcode-ref-ex">beatmap link</span></li>
                         <li><code>{artist}</code> <span class="guest-bbcode-ref-ex">artist name</span></li>
@@ -349,46 +353,7 @@
           </section>
         </aside>
       </div>
-
-      <section id="setup" class="page-section" aria-labelledby="setup-heading">
-        <div class="section-intro">
-          <h2 id="setup-heading" class="section-title">Account</h2>
-          <p class="section-lead">
-            OAuth app from osu! — callback URL must match what you see below.
-            <a class="inline-link" href="https://osu.ppy.sh/docs/#oauth" target="_blank" rel="noopener">OAuth docs</a>
-          </p>
-        </div>
-
-        <div id="oauth-panel" class="panel oauth-panel" hidden>
-          <div class="oauth-panel-head">
-            <h3 class="oauth-panel-title">OAuth</h3>
-            <button id="copy-callback" type="button" class="btn btn-secondary btn-sm">Copy callback</button>
-          </div>
-          <div class="form-grid">
-            <div class="field">
-              <label for="oauth-client-id">Client ID</label>
-              <input id="oauth-client-id" inputmode="numeric" autocomplete="off" placeholder="12345">
-            </div>
-            <div class="field">
-              <label for="oauth-client-secret">Client Secret</label>
-              <input id="oauth-client-secret" type="password" autocomplete="off" spellcheck="false"
-                placeholder="Leave blank to keep saved">
-            </div>
-            <div class="field span-2">
-              <label for="oauth-callback-url">Callback URL</label>
-              <input id="oauth-callback-url" type="text" readonly>
-            </div>
-          </div>
-        </div>
-
-        <p class="setup-hint">
-          <button type="button" class="link-button" id="show-oauth-setup">Show OAuth fields</button>
-        </p>
-        <div class="account-toolbar">
-          <button type="button" id="save-settings-account" class="btn btn-secondary">Save settings</button>
-          <p id="account-feedback" class="account-feedback" role="status" hidden></p>
-        </div>
-      </section>
+      </div>
     </div>
   </main>
 

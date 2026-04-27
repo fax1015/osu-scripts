@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account — osu! scripts</title>
+  <meta name="description" content="Sign in with your osu! account for this app.">
+  <meta name="app-repo" content="https://github.com/faxaxaxa/osu-scripts">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <a class="skip-link" href="#main">skip to content</a>
+
+  <header class="nav-bar">
+    <div class="nav-outer">
+      <div class="nav-outer-backdrop" aria-hidden="true"></div>
+      <div class="nav-inner">
+        <a href="index.html" class="nav-inner-left" aria-label="osu! scripts home">
+          <p class="pink">osu!</p>
+          <p>scripts</p>
+        </a>
+
+        <button type="button" id="nav-burger" class="nav-burger" aria-expanded="false" aria-controls="nav-anchors"
+          aria-label="Open sections menu">
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+          <span class="nav-burger-bar" aria-hidden="true"></span>
+        </button>
+
+        <nav id="nav-anchors" class="nav-anchors" aria-label="Page sections">
+          <a href="index.html#guest-difficulties">guest diff bbcode</a>
+          <a href="index.html#oldest-scores">find oldest scores</a>
+        </nav>
+
+        <div class="nav-actions">
+          <div id="nav-auth-guest" class="nav-auth-guest">
+            <button type="button" id="login-osu" class="btn-login-osu">login with osu!</button>
+          </div>
+          <div id="nav-auth-user" class="nav-auth-user" hidden>
+            <div class="nav-account-dropdown">
+              <button type="button" id="profile-menu-trigger" class="btn-profile-trigger" aria-expanded="false"
+                aria-haspopup="menu" aria-controls="profile-menu-panel">
+                <img id="account-avatar" class="account-avatar" alt="" width="22" height="22" hidden>
+                <span id="account-label" class="profile-trigger-label"></span>
+                <svg class="profile-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M2.5 4.25L6 7.75l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.35"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div id="profile-menu-panel" class="profile-menu-panel" role="menu" aria-hidden="true">
+                <p id="token-status" class="token-status profile-menu-status" role="status">checking login…</p>
+                <a href="account.html" class="profile-menu-item" role="menuitem" aria-current="page">account</a>
+                <button type="button" id="save-settings-menu" class="profile-menu-item" role="menuitem">save
+                  settings</button>
+                <button type="button" id="logout-osu" class="profile-menu-item" role="menuitem">log out</button>
+                <button type="button" id="close-app" class="profile-menu-item" role="menuitem" hidden>close app</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="main-content">
+      <section class="page-section" aria-labelledby="account-page-heading">
+        <div class="section-intro">
+          <h2 id="account-page-heading" class="section-title">Account</h2>
+          <p class="section-lead" id="account-lead-available">
+            use <strong>log in with osu!</strong> in the header to connect this site to your osu! profile. Credentials
+            stay on the server — you never paste a client ID or secret here.
+            <a class="inline-link" href="https://osu.ppy.sh/docs/#oauth" target="_blank" rel="noopener">About OAuth on
+              osu!</a>
+          </p>
+          <p class="section-lead" id="account-lead-unavailable" hidden>
+            Sign-in is not enabled on this server. The operator must set <code>OSU_OAUTH_CLIENT_ID</code> and
+            <code>OSU_OAUTH_CLIENT_SECRET</code>, and register the callback URL for this deployment on osu.ppy.sh (see
+            repo docs).
+          </p>
+          <p class="section-lead" id="account-lead-signed-in" hidden>
+            you're signed in as <strong id="account-signed-in-name"></strong>. use the profile menu to log out.
+          </p>
+        </div>
+        <p id="account-feedback" class="account-feedback account-page-hint" role="status" hidden></p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>unaffiliated with osu! or ppy...</p>
+      <p><a id="footer-repo" class="inline-link" href="https://github.com/faxaxaxa/osu-scripts" target="_blank"
+          rel="noopener">github repo</a></p>
+    </div>
+  </footer>
+
+  <script src="app.js" type="module"></script>
+</body>
+
+</html>
