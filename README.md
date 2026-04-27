@@ -1,191 +1,41 @@
 # osu! scripts
 
-Standalone Node tools for small osu! profile lookups, plus a **web UI** (guest-difficulty BBCode export and oldest public scores). Run the UI locally with Node, or deploy to **Vercel** for a hosted instance. The command-line entrypoints for those tools are in **`cli/`**; run them from the repository root (for example `node cli/find-oldest-osu-score.mjs --help`).
+Small tools for osu!: **guest-difficulty BBCode** and **oldest public scores**. Includes a **web UI** and matching CLIs in `cli/`.
 
-## Web UI — local
+**Needs Node 18+.**
+
+## Web UI (local)
 
 ```bash
 npm install
 npm start
+# optional: npm run open  →  same, plus open a browser
 ```
 
-Open **http://127.0.0.1:4173** (or the URL printed in the terminal). Use **Close app** to stop the server. The script tools in the web UI are shown only after you **log in with osu!**.
+Default URL: `http://127.0.0.1:4173`. **Log in with osu!** to use the tools; options are stored in `.osu-script-ui-settings.json` (gitignored).
 
-The header **Look A / B / C** control switches between three layout themes (choice is saved in `localStorage`, and `?design=2` or `?design=3` in the URL loads B or C on first paint).
+**OAuth (operator):** create an app on [osu!](https://osu.ppy.sh/home/account/edit#new-oauth-application), set the callback to `http://127.0.0.1:4173/auth/osu/callback` (adjust host/port if you use `HOST` / `PORT`), and set:
 
-```bash
-npm run open
-```
+- `OSU_OAUTH_CLIENT_ID`
+- `OSU_OAUTH_CLIENT_SECRET`
 
-starts the server and tries to open a browser tab.
+Optional: `OSU_ACCESS_TOKEN` for script runs without a browser session.
 
-If you edit the beatmap preview under `preview/src/`, run `npm run build:preview` to regenerate `public/preview/preview-bundle.js`.
+## Web UI (Vercel)
 
-### Settings storage (local)
+Connect the repo, add **`BLOB_READ_WRITE_TOKEN`** (Vercel Blob) so settings persist, set the same OAuth vars, and register callback `https://<your-app>.vercel.app/auth/osu/callback`. Redeploy after env changes.
 
-The UI saves script options and OAuth tokens in **`.osu-script-ui-settings.json`** in the repo root (gitignored). You can also set **`OSU_ACCESS_TOKEN`** in the environment before `npm start` as a fallback for the guest exporter.
+## CLI
 
-### OAuth (local or Vercel)
+Run from the repo root; use `--help` on each command.
 
-The web UI no longer asks users for a client id, secret, or callback URL. The **operator** creates one OAuth application on [osu!](https://osu.ppy.sh/home/account/edit#new-oauth-application) and configures the **server** with environment variables (see [osu! OAuth documentation](https://osu.ppy.sh/docs/#oauth)):
+| Script | Purpose |
+|--------|---------|
+| `cli/find-osu-guest-difficulties.mjs` | Guest-diff BBCode / export |
+| `cli/find-oldest-osu-score.mjs` | Oldest scores from public feeds only |
 
-1. **Callback URL** (must match the URL your server uses, path `/auth/osu/callback`):
-   - Local: `http://127.0.0.1:4173/auth/osu/callback` (or your `PORT` / `HOST` if you changed them).
-   - Vercel: `https://<your-deployment>.vercel.app/auth/osu/callback`.
-2. Set **`OSU_OAUTH_CLIENT_ID`** and **`OSU_OAUTH_CLIENT_SECRET`** in the environment (Vercel project settings, or your shell before `npm start`).
+`OSU_ACCESS_TOKEN` improves guest export coverage (all statuses); without it, only ranked/loved show on the public feed.
 
-**Legacy (optional):** older installs can still use client id/secret stored in `.osu-script-ui-settings.json` until you migrate; when both env vars are set, those fields are no longer read from the file and are stripped on save.
+The oldest-score tool only sees what osu!’s public profile feeds expose—not guaranteed to be a user’s true first play ever.
 
-3. **Log in** from the app header; users never paste app credentials in the browser.
-
-### Port and host (local only)
-
-```powershell
-$env:PORT = "4174"
-node server.mjs
-```
-
-The server binds to **`127.0.0.1`** by default (`HOST` env overrides it).
-
-## Web UI — Vercel
-
-1. Push this repository to GitHub and import it in the [Vercel dashboard](https://vercel.com/new), or run `npx vercel` from the project root.
-2. In the Vercel project, add a **Blob** store (Storage → Create → Blob) and copy **`BLOB_READ_WRITE_TOKEN`** into **Project → Environment variables**. Without it, production cannot persist OAuth and form settings across cold starts.
-3. Set **`OSU_OAUTH_CLIENT_ID`** and **`OSU_OAUTH_CLIENT_SECRET`** from your osu! OAuth app (see **OAuth (local or Vercel)** above), and an optional **`OSU_ACCESS_TOKEN`** if you want the server to always have a token for scripts without anyone logging in through the UI.
-4. Register the app’s callback URL on osu! as **`https://<your-project>.vercel.app/auth/osu/callback`**.
-5. Redeploy after changing env vars.
-
-**Guest exporter on Vercel:** the server runs the script with **`--output=-`**, so the BBCode is returned in the JSON response and can be **downloaded from the browser** instead of being written on the server filesystem.
-
-**Function duration:** `api/run` is configured for up to **300 seconds** in `vercel.json`. Very large guest scans can still hit plan limits; the Hobby tier has shorter defaults than Pro — see [Vercel function limits](https://vercel.com/docs/functions/limitations). For huge exports, run **`node cli/find-osu-guest-difficulties.mjs`** locally.
-
-**Repository link in the footer:** set the `content` attribute of `<meta name="app-repo">` in `public/index.html` to your public GitHub URL.
-
-### Local parity with Vercel
-
-```bash
-npx vercel dev
-```
-
-runs the same API routes against your working tree (requires the Vercel CLI).
-
-## Guest difficulty BBCode exporter
-
-`cli/find-osu-guest-difficulties.mjs`:
-
-- accepts an osu! profile link, username, or numeric user id
-- scans the profile's public `guest` beatmapset feed
-- keeps only difficulties mapped by that user on other people's beatmapsets
-- includes collab difficulties when the target user is one of the difficulty owners
-- writes osu! forum BBCode into a `.txt` file
-- skips beatmap links already present in the `.txt` file on later runs
-- refreshes existing lines so ranked, loved, pending, wip, and graveyard maps get a color-coded status tag
-- writes one spoiler box and one notice box, with bold year headings inside
-
-For every status (`ranked`, `loved`, `pending`, `wip`, `graveyard`, etc.), set `OSU_ACCESS_TOKEN` to an osu! OAuth token for the same user you are exporting. With that token, the script uses osu!'s authenticated all-status `mine` beatmapset search and filters out self-owned sets afterward.
-
-Without `OSU_ACCESS_TOKEN`, the script falls back to osu!'s public profile route (`/users/{id}/beatmapsets/guest`). That public route only exposes ranked/loved guest beatmapsets.
-
-```bash
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493"
-```
-
-Useful options:
-
-```bash
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --modes=osu
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=beatmap-id
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --sort=difficulty-updated
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --concurrency=8
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --dry-run
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --verbose
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --json
-```
-
-Sorting defaults to `beatmap-id`, which is usually a better proxy for when a difficulty was created than the beatmapset's upload/ranked date. `difficulty-updated` uses the difficulty's `last_updated` value, and `set-date` uses the old beatmapset-level date fallback.
-
-Full beatmapset detail requests run in parallel, and the script prints a progress bar while that happens. Use `--concurrency` to tune how many detail requests run at once.
-
-The script does not reorder entries already in the output file; it only sorts new entries before appending them into each year section.
-
-Items inside each year section are written on consecutive lines without blank lines between them.
-
-PowerShell example with an OAuth token:
-
-```powershell
-$env:OSU_ACCESS_TOKEN = "your-user-access-token"
-node cli/find-osu-guest-difficulties.mjs "https://osu.ppy.sh/users/124493" --output=./guest-difficulties.txt
-```
-
-Output format:
-
-```bbcode
-[box=giant list of gds - 2]
-[notice]
-most recently updated maps are at the top
-
-[b]2026 - 1[/b]
-[url=https://osu.ppy.sh/beatmapsets/2322452#osu/5573977]Negentropy - ouroVoros (faxaxaxa's Normal)[/url] - [size=85][color=#ffd166](Pending)[/color][/size]
-
-[b]2025 - 1[/b]
-[url=https://osu.ppy.sh/beatmapsets/2265324#osu/4829436]25-ji, Nightcord de. x KAITO - BAKENOHANA (faxaxaxa's Expert)[/url] - [size=85][color=#b7f36b](Ranked)[/color][/size]
-
-[/notice]
-[/box]
-```
-
-## Oldest public score finder
-
-`cli/find-oldest-osu-score.mjs`:
-
-- accepts an osu! profile link, username, or numeric user id
-- scans the public score feeds exposed by the osu! website
-- builds a local index of the fetched scores if you want one
-- reports the 5 oldest publicly discoverable scores it can find
-
-## Important limitation
-
-osu! does **not** expose a full lifetime score history on the public profile pages. The script only searches the public profile score feeds the website exposes, such as `firsts`, `best`, and `recent`.
-
-That means the result is:
-
-- the oldest score visible from those public web feeds
-- not necessarily the user's absolute oldest play ever
-
-## Requirements
-
-- Node.js 18+ with built-in `fetch`
-
-## Usage
-
-```bash
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493"
-```
-
-You can also pass a numeric user id:
-
-```bash
-node cli/find-oldest-osu-score.mjs 124493
-```
-
-## Useful options
-
-```bash
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --verbose
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --json
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --modes=osu
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --feeds=firsts,best
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --save-index=./scores.json
-node cli/find-oldest-osu-score.mjs "https://osu.ppy.sh/users/124493" --page-size=100 --max-pages=5
-```
-
-## Output
-
-The script prints:
-
-- the resolved user id and profile URL
-- how many raw and unique scores it indexed
-- the 5 oldest publicly discoverable scores
-- a direct score link for each result
-- a note explaining the public-data limitation
+**Preview asset build** (if you change `preview/src/`): `npm run build:preview`
