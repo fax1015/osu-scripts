@@ -14,8 +14,5 @@
     "build:preview": "node scripts/bundle-preview.mjs",
     "dev:vercel": "vercel dev"
   },
-  "dependencies": {
-    "@vercel/blob": "^2.3.3",
-    "@vercel/kv": "^3.0.0"
-  }
+  "dependencies": {}
 }
