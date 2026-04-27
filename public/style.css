@@ -1689,7 +1689,7 @@ a.btn:active {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  padding: 0.42rem 0.7rem 0.48rem;
+  padding: 0.42rem 0.54rem 0.42rem;
   background: linear-gradient(180deg, #2d2d30 0%, #252526 100%);
   border-bottom: 1px solid rgba(0, 0, 0, 0.4);
 }
@@ -2087,11 +2087,13 @@ a.btn:active {
 }
 
 .preview-area {
-  margin-top: 1.5rem;
   padding: 1rem;
   background: var(--bg-button);
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  overflow: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 .preview-header {
