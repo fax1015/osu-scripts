@@ -1235,6 +1235,12 @@ a.btn:active {
   max-width: 52rem;
 }
 
+.section-lead-note {
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
+  max-width: 52rem;
+}
+
 .inline-link {
   color: var(--text-pink);
   text-decoration: none;

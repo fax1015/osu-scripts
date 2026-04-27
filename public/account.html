@@ -65,10 +65,16 @@
         <div class="section-intro">
           <h2 id="account-page-heading" class="section-title">Account</h2>
           <p class="section-lead" id="account-lead-available">
-            use <strong>log in with osu!</strong> in the header to connect this site to your osu! profile. Credentials
-            stay on the server — you never paste a client ID or secret here.
+            use <strong>log in with osu!</strong> in the header to connect this site to your osu! profile. Your OAuth
+            token is kept only on this app’s server so it can call osu!’s API for the tools. Log out whenever you want to
+            clear it from this site.
             <a class="inline-link" href="https://osu.ppy.sh/docs/#oauth" target="_blank" rel="noopener">About OAuth on
               osu!</a>
+          </p>
+          <p class="section-lead section-lead-note" id="account-lead-operator">
+            <strong>Self-hosting / operators:</strong> only whoever runs the deployment needs to register an OAuth app
+            and set the client id and secret in the environment. Other people only tap “log in with osu!” and authorise
+            the app; they do not configure any credentials.
           </p>
           <p class="section-lead" id="account-lead-unavailable" hidden>
             Sign-in is not enabled on this server. The operator must set <code>OSU_OAUTH_CLIENT_ID</code> and
