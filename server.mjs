@@ -66,3 +66,20 @@ if (isVercelRuntime()) {
     }
   });
 }
+
+/**
+ * Vercel’s bundler may require a default export if `server.mjs` is referenced. The real app is
+ * static files in `public/` plus `api/*.mjs` — in project settings, set **Output Directory** to
+ * `public` and do not use this file as the app entry. This handler should not receive traffic.
+ */
+export default function vercelHandler(req, res) {
+  if (isVercelRuntime()) {
+    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    res.end(
+      "Not served from server.mjs. Set the Vercel project Output to public/ and use api/ for API routes. See README.",
+    );
+    return;
+  }
+  res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+  res.end("This export is only for the Vercel build; use npm start locally.");
+}
