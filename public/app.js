@@ -204,13 +204,13 @@ function setGuestTemplateParseHint(parseOk, reason) {
   el.className = "field-hint guest-bbcode-parse-hint is-warn";
   const messages = {
     "missing-marker":
-      "Add a line containing only # osu-guest-line, then on the next line your beatmap row template (repeated for every map).",
-    "missing-line": "Put one non-empty line immediately after # osu-guest-line (your repeating guest row).",
-    "missing-year": "Add a year heading line (with {year}) above # osu-guest-line.",
-    "missing-notice": "Include [notice] before the intro and year block.",
-    "missing-close-tags": "After the beatmap line, keep [/notice] and [/box] (and any spacing you want).",
+      "add a line containing only # osu-guest-line, then on the next line your beatmap row template (repeated for every map).",
+    "missing-line": "put one non-empty line immediately after # osu-guest-line (your repeating guest row).",
+    "missing-year": "add a year heading line (with {year}) above # osu-guest-line.",
+    "missing-notice": "include [notice] before the intro and year block.",
+    "missing-close-tags": "after the beatmap line, keep [/notice] and [/box] (and any spacing you want).",
   };
-  el.textContent = messages[reason] || "Template could not be parsed; using saved or built-in defaults.";
+  el.textContent = messages[reason] || "template could not be parsed; using saved or built-in defaults.";
 }
 
 function getGuestPartsFromUI() {
@@ -351,8 +351,8 @@ function onDocumentKeydownMenu(event) {
 
 init().catch((error) => {
   console.error(error);
-  setAccountFeedback(`Could not reach the server: ${error.message}`, "is-warn");
-  setLoginHint(`Could not reach the server: ${error.message}`);
+  setAccountFeedback(`could not reach the server: ${error.message}`, "is-warn");
+  setLoginHint(`could not reach the server: ${error.message}`);
 });
 
 async function init() {
@@ -573,7 +573,7 @@ function setupFooterRepo() {
     footerRepo.addEventListener("click", (e) => {
       e.preventDefault();
     });
-    footerRepo.textContent = "repository (set meta app-repo)";
+    footerRepo.textContent = "repository (set meta[name=app-repo])";
   }
 }
 
@@ -635,12 +635,12 @@ async function fetchJson(url, options = {}) {
     try {
       data = JSON.parse(text);
     } catch {
-      throw new Error(`Unexpected response (${res.status})`);
+      throw new Error(`unexpected response (${res.status})`);
     }
   }
   if (!res.ok) {
     const msg = data?.error || data?.message || res.statusText;
-    throw new Error(msg || `Request failed (${res.status})`);
+    throw new Error(msg || `request failed (${res.status})`);
   }
   return data;
 }
@@ -762,10 +762,10 @@ async function saveSettings() {
     applySettings(latestSettings);
     updateTokenStatus(latestSettings);
     if (loggedIn(latestSettings)) {
-      tokenStatus.textContent = "Settings saved.";
+      tokenStatus.textContent = "settings saved.";
       tokenStatus.className = "token-status profile-menu-status is-ok";
     } else {
-      setAccountFeedback("Settings saved.", "is-ok");
+      setAccountFeedback("settings saved.", "is-ok");
     }
     setLoginHint("");
   } catch (error) {
@@ -893,7 +893,7 @@ async function closeApp() {
   closeAppButton.disabled = true;
   try {
     await fetchJson("/api/shutdown", { method: "POST" });
-    tokenStatus.textContent = "Server closed.";
+    tokenStatus.textContent = "server closed.";
     tokenStatus.className = "token-status profile-menu-status is-ok";
     closeProfileMenu();
   } catch (error) {
@@ -959,16 +959,16 @@ function renderGuestStructured(data) {
     parts.push(
       `<div class="bbcode-block">
         <div class="bbcode-result-toolbar" role="tablist" aria-label="BBCode result view">
-          <button type="button" role="tab" aria-selected="true" class="btn btn-secondary btn-sm is-active" data-bbcode-view="raw" data-raw-id="${id}" data-preview-id="${previewId}">Raw</button>
-          <button type="button" role="tab" aria-selected="false" class="btn btn-secondary btn-sm" data-bbcode-view="preview" data-raw-id="${id}" data-preview-id="${previewId}">Preview</button>
+          <button type="button" role="tab" aria-selected="true" class="btn btn-secondary btn-sm is-active" data-bbcode-view="raw" data-raw-id="${id}" data-preview-id="${previewId}">raw</button>
+          <button type="button" role="tab" aria-selected="false" class="btn btn-secondary btn-sm" data-bbcode-view="preview" data-raw-id="${id}" data-preview-id="${previewId}">preview</button>
         </div>
         <textarea id="${id}" class="bbcode-textarea" readonly>${escapeHtml(data.outputBbcode)}</textarea>
         <div id="${previewId}" class="bbcode-rendered-preview" hidden>${bbcodeToHtml(data.outputBbcode)}</div>
-        <p class="bbcode-actions"><button type="button" class="btn btn-secondary btn-sm" data-copy-target="${id}">Copy BBCode</button></p>
+        <p class="bbcode-actions"><button type="button" class="btn btn-secondary btn-sm" data-copy-target="${id}">copy BBCode</button></p>
       </div>`,
     );
   } else {
-    parts.push('<p>No BBCode output returned.</p>');
+    parts.push('<p>no BBCode output returned.</p>');
   }
 
   return parts.join('');
@@ -1117,7 +1117,7 @@ function normalizeRunLogLine(event) {
 async function readStreamingRunResponse(response, logEl) {
   const reader = response.body?.getReader?.();
   if (!reader) {
-    throw new Error("This browser cannot read streaming responses.");
+    throw new Error("this browser cannot read streaming responses.");
   }
 
   const decoder = new TextDecoder();
@@ -1149,7 +1149,7 @@ async function readStreamingRunResponse(response, logEl) {
       } else if (event.type === "result" || event.type === "done") {
         finalResult = event.result || event;
       } else if (event.type === "error") {
-        throw new Error(event.message || "Script failed.");
+        throw new Error(event.message || "script failed.");
       }
     }
   }
@@ -1169,7 +1169,7 @@ async function readStreamingRunResponse(response, logEl) {
   }
 
   if (!finalResult) {
-    throw new Error("Streaming run finished without a final result.");
+    throw new Error("streaming run finished without a final result.");
   }
 
   return finalResult;
@@ -1199,7 +1199,7 @@ async function fetchRunResult(payload, logEl) {
     return readStreamingRunResponse(streamResponse, logEl);
   }
 
-  appendTerminalLog(logEl, "Streaming endpoint missing; falling back to non-live /api/run.\n");
+  appendTerminalLog(logEl, "streaming endpoint missing; falling back to non-live /api/run.\n");
   const result = await fetchJson("/api/run", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -1218,7 +1218,7 @@ async function runScript(event, script) {
   const target =
     script === "guest" ? readGuestPayload().target : readOldestPayload().target;
   if (!target) {
-    setAccountFeedback("Enter a profile URL, username, or user id.", "is-warn");
+    setAccountFeedback("enter a profile URL, username, or user id.", "is-warn");
     const focusSel = script === "guest" ? "#guest-target" : "#oldest-target";
     form.querySelector(focusSel)?.focus();
     return;
@@ -1227,7 +1227,7 @@ async function runScript(event, script) {
   submit.disabled = true;
   const bodyEl = runResultsBody;
   const logEl = runResultsLog;
-  bodyEl.innerHTML = "<p>Running…</p>";
+  bodyEl.innerHTML = "<p>running…</p>";
   logEl.textContent = "";
   terminalWindowEl?.classList.remove("is-terminal-minimized");
   terminalBtnMinimize?.setAttribute("aria-pressed", "false");
@@ -1250,14 +1250,14 @@ async function runScript(event, script) {
       wireCopyButtons(bodyEl);
     } else {
       bodyEl.innerHTML = `<pre class="log-pre" style="max-height:none">${escapeHtml(
-        result.stdout || result.stderr || "No output",
+        result.stdout || result.stderr || "no output",
       )}</pre>`;
     }
 
     if (!result.ok) {
       bodyEl.insertAdjacentHTML(
         "afterbegin",
-        `<p class="token-status is-warn" style="max-width:none">Script exited with code ${escapeHtml(
+        `<p class="token-status is-warn" style="max-width:none">script exited with code ${escapeHtml(
           String(result.code),
         )}.</p>`,
       );

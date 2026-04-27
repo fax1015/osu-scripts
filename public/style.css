@@ -2247,6 +2247,11 @@ input[type="checkbox"]:checked {
   background-color: var(--text-pink);
 }
 
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text-pink) 70%, transparent);
+  outline-offset: 2px;
+}
+
 .divider {
   height: 1px;
   background: var(--border-color);

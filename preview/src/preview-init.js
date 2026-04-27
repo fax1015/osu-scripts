@@ -272,7 +272,7 @@ const loadRandomMap = async () => {
             const m = data.metadata || {};
             elTitle.textContent = m.title || '';
             elDiff.textContent = m.version || '';
-            elMapper.textContent = m.creator ? `Mapper: ${m.creator}` : '';
+            elMapper.textContent = m.creator ? `mapper: ${m.creator}` : '';
             elLink.href = getOsuBeatmapPageUrl(m);
             elLink.setAttribute(
                 'aria-label',
