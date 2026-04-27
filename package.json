@@ -8,9 +8,9 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.mjs",
-    "ui": "node server.mjs",
-    "open": "node server.mjs --open",
+    "start": "node scripts/local-server.mjs",
+    "ui": "node scripts/local-server.mjs",
+    "open": "node scripts/local-server.mjs --open",
     "build:preview": "node scripts/bundle-preview.mjs",
     "dev:vercel": "vercel dev"
   },

@@ -23,7 +23,7 @@ Optional: `OSU_ACCESS_TOKEN` for script runs without a browser session.
 
 ## Web UI (Vercel)
 
-In the Vercel project: **Framework Preset** = Other, **Output Directory** = `public`, **Build Command** = empty (unless you add a build step). Do **not** set the app or server entry to `server.mjs` (that file is only for local `npm start`).
+In the Vercel project: **Root Directory** = empty (repository root, **not** `public/`). **Framework Preset** = Other, **Build Command** = empty (unless you add a build step). Do **not** set a custom server or entry to a root `server.mjs` (local dev uses `scripts/local-server.mjs` via `npm start` only). Static files are in `public/`; API routes in `api/`.
 
 Add **`BLOB_READ_WRITE_TOKEN`** (Vercel Blob) so settings persist, set the same OAuth vars, and register callback `https://<your-app>.vercel.app/auth/osu/callback`. Redeploy after env changes.
 
