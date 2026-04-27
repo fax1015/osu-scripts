@@ -2,7 +2,6 @@
   "name": "osu-scripts",
   "version": "1.0.0",
   "private": true,
-  "main": "index.mjs",
   "description": "osu! utility scripts with a web UI — guest difficulty BBCode export and oldest public score finder.",
   "type": "module",
   "engines": {
