@@ -1,4 +1,5 @@
 .osu-script-ui-settings.json
+.osu-script-sessions/
 node_modules/
 .vercel
 .env
