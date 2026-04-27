@@ -31,37 +31,38 @@ function openInBrowser(url) {
   child.unref();
 }
 
+// Vercel serves `public/` and `api/*` only; this file is for local `npm start` (no VERCEL=1).
 if (isVercelRuntime()) {
-  console.error("Use Vercel serverless entrypoints; run `npm start` locally without VERCEL=1.");
-  process.exit(1);
-}
-
-const server = createServer(async (request, response) => {
-  try {
-    const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
-    const handled = await dispatchHttp(request, response, url);
-    if (!handled) {
-      await handleStatic(request, response, url.pathname);
+  // Intentionally do not start a Node HTTP server or exit(1) — that breaks builds/health
+  // checks if `server.mjs` is ever loaded in the Vercel environment.
+} else {
+  const server = createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+      const handled = await dispatchHttp(request, response, url);
+      if (!handled) {
+        await handleStatic(request, response, url.pathname);
+      }
+    } catch (error) {
+      sendJson(response, error.statusCode || 500, {
+        ok: false,
+        error: error.message || "Something went wrong.",
+      });
     }
-  } catch (error) {
-    sendJson(response, error.statusCode || 500, {
-      ok: false,
-      error: error.message || "Something went wrong.",
-    });
-  }
-});
-
-globalThis.__osuShutdown = () => {
-  server.close(() => {
-    process.exit(0);
   });
-};
 
-server.listen(PORT, HOST, () => {
-  const url = `http://${HOST}:${PORT}`;
-  console.log(`osu! script UI is running at ${url}`);
+  globalThis.__osuShutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
 
-  if (SHOULD_OPEN_BROWSER) {
-    openInBrowser(url);
-  }
-});
+  server.listen(PORT, HOST, () => {
+    const url = `http://${HOST}:${PORT}`;
+    console.log(`osu! script UI is running at ${url}`);
+
+    if (SHOULD_OPEN_BROWSER) {
+      openInBrowser(url);
+    }
+  });
+}
