@@ -5,10 +5,12 @@
   ],
   "functions": {
     "api/run.mjs": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "cli/**"
     },
     "api/run/stream.mjs": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "cli/**"
     }
   }
 }
