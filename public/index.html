@@ -22,19 +22,25 @@
           <p>scripts</p>
         </a>
 
-        <button type="button" id="nav-burger" class="nav-burger signed-in-only" aria-expanded="false" aria-controls="nav-anchors"
+        <button type="button" id="nav-burger" class="nav-burger" aria-expanded="false" aria-controls="nav-anchors"
           aria-label="Open sections menu">
           <span class="nav-burger-bar" aria-hidden="true"></span>
           <span class="nav-burger-bar" aria-hidden="true"></span>
           <span class="nav-burger-bar" aria-hidden="true"></span>
         </button>
 
-        <nav id="nav-anchors" class="nav-anchors signed-in-only" aria-label="Page sections">
-          <a href="#guest-difficulties">guest diff bbcode</a>
-          <a href="#oldest-scores">find oldest scores</a>
-          <a href="#collab-merger">collab merger</a>
-          <a href="#timing-editor">timing editor</a>
-          <a href="#surgical-timing-fix">surgical timing fix</a>
+        <nav id="nav-anchors" class="nav-anchors" aria-label="Page sections">
+          <a href="#guest-difficulties" class="nav-tool-link" data-requires-auth="true">
+            <span class="nav-tool-link-text">guest diff bbcode</span>
+            <span class="nav-lock-badge material-symbols-rounded" aria-hidden="true">lock</span>
+          </a>
+          <a href="#oldest-scores" class="nav-tool-link" data-requires-auth="true">
+            <span class="nav-tool-link-text">find oldest scores</span>
+            <span class="nav-lock-badge material-symbols-rounded" aria-hidden="true">lock</span>
+          </a>
+          <a href="#collab-merger" class="nav-tool-link">collab merger</a>
+          <a href="#timing-editor" class="nav-tool-link">timing editor</a>
+          <a href="#surgical-timing-fix" class="nav-tool-link">surgical timing fix</a>
         </nav>
 
         <div class="nav-actions">
@@ -90,15 +96,101 @@
           <p class="hero-subtitle">
             not much here yet, still a work in progress (i made these for myself)
           </p>
-          <button type="button" id="hero-login-osu" class="btn-login-osu hero-sign-in-prompt">
-            login with osu!
-          </button>
-          <div class="hero-cta signed-in-only">
-            <a class="btn btn-primary" href="#guest-difficulties">guest diff bbcode</a>
-            <a class="btn btn-secondary" href="#oldest-scores">find oldest scores</a>
-            <a class="btn btn-secondary" href="#collab-merger">merge collab</a>
+          <div class="hero-dashboard">
+            <div id="hero-dashboard-login-banner" class="hero-dashboard-banner hero-sign-in-prompt">
+              <div class="banner-content">
+                <span class="material-symbols-rounded banner-icon">info</span>
+                <span class="banner-text">login to unlock more stuff</span>
+              </div>
+              <button type="button" id="hero-login-osu" class="btn-login-osu">login with osu!</button>
+            </div>
+            <div class="tool-list-container">
+              <div class="tool-tile-list">
+                <!-- Tile 1: Guest Diff BBCode -->
+                <a href="#guest-difficulties" class="tool-tile" data-requires-auth="true" id="tile-guest-diff">
+                  <div class="tool-tile-icon-wrap">
+                    <span class="material-symbols-rounded">forum</span>
+                  </div>
+                  <div class="tool-tile-info">
+                    <div class="tool-tile-header">
+                      <span class="tool-tile-name">guest diff bbcode</span>
+                      <span class="tile-badge badge-auth"><span class="material-symbols-rounded">lock</span></span>
+                    </div>
+                    <p class="tool-tile-desc">spits out bbcode difficulty lists for your forum profile</p>
+                  </div>
+                  <div class="tool-tile-arrow">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                  </div>
+                </a>
+
+                <!-- Tile 2: Find Oldest Scores -->
+                <a href="#oldest-scores" class="tool-tile" data-requires-auth="true" id="tile-oldest-scores">
+                  <div class="tool-tile-icon-wrap">
+                    <span class="material-symbols-rounded">history</span>
+                  </div>
+                  <div class="tool-tile-info">
+                    <div class="tool-tile-header">
+                      <span class="tool-tile-name">find oldest scores</span>
+                      <span class="tile-badge badge-auth"><span class="material-symbols-rounded">lock</span></span>
+                    </div>
+                    <p class="tool-tile-desc">digs up the oldest plays on your profile</p>
+                  </div>
+                  <div class="tool-tile-arrow">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                  </div>
+                </a>
+
+                <!-- Tile 3: Collab Merger -->
+                <a href="#collab-merger" class="tool-tile" id="tile-collab-merger">
+                  <div class="tool-tile-icon-wrap">
+                    <span class="material-symbols-rounded">call_merge</span>
+                  </div>
+                  <div class="tool-tile-info">
+                    <div class="tool-tile-header">
+                      <span class="tool-tile-name">collab merger</span>
+                    </div>
+                    <p class="tool-tile-desc">smashes notes, timing, and bookmarks from guest maps together</p>
+                  </div>
+                  <div class="tool-tile-arrow">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                  </div>
+                </a>
+
+                <!-- Tile 4: Timing Editor -->
+                <a href="#timing-editor" class="tool-tile" id="tile-timing-editor">
+                  <div class="tool-tile-icon-wrap">
+                    <span class="material-symbols-rounded">speed</span>
+                  </div>
+                  <div class="tool-tile-info">
+                    <div class="tool-tile-header">
+                      <span class="tool-tile-name">double / half BPM</span>
+                    </div>
+                    <p class="tool-tile-desc">speeds up or slows down your map and scales slider velocity</p>
+                  </div>
+                  <div class="tool-tile-arrow">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                  </div>
+                </a>
+
+                <!-- Tile 5: Surgical Timing Fix -->
+                <a href="#surgical-timing-fix" class="tool-tile" id="tile-surgical-fix">
+                  <div class="tool-tile-icon-wrap">
+                    <span class="material-symbols-rounded">construction</span>
+                  </div>
+                  <div class="tool-tile-info">
+                    <div class="tool-tile-header">
+                      <span class="tool-tile-name">surgical timing fix</span>
+                    </div>
+                    <p class="tool-tile-desc">steals red timing lines and puts them in other maps without breaking velocity</p>
+                  </div>
+                  <div class="tool-tile-arrow">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                  </div>
+                </a>
+              </div>
+            </div>
           </div>
-          <a href="#guest-difficulties" class="hero-scroll-hint signed-in-only">
+          <a href="#guest-difficulties" class="hero-scroll-hint">
             <span class="visually-hidden">Scroll to tools</span>
             <svg class="hero-scroll-hint-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"

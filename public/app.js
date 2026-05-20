@@ -513,6 +513,36 @@ async function init() {
       updateGuestTemplatePreview();
     }
   });
+
+  // Tool card click handlers - Intercept locked tools for guests
+  document.querySelectorAll(".tool-tile[data-requires-auth='true'], .nav-tool-link[data-requires-auth='true']").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (!loggedIn(latestSettings)) {
+        event.preventDefault();
+        const banner = document.getElementById("hero-dashboard-login-banner");
+        if (banner) {
+          banner.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    });
+  });
+
+  // Smooth scroll to target sections
+  document.querySelectorAll(".tool-tile, .nav-tool-link, .nav-anchors a:not(.nav-tool-link)").forEach((tile) => {
+    tile.addEventListener("click", (event) => {
+      const targetId = tile.getAttribute("href");
+      if (targetId && targetId.startsWith("#")) {
+        // Only run if not intercepted (signed-in)
+        if (!tile.dataset.requiresAuth || loggedIn(latestSettings)) {
+          const section = document.querySelector(targetId);
+          if (section) {
+            event.preventDefault();
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+      }
+    });
+  });
 }
 
 function previewGuestUsername() {
