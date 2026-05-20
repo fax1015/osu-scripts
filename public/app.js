@@ -876,6 +876,17 @@ function syncSelectedFiles(input, files) {
   if (input.closest("#timing-form")) {
     updateTimingSummary();
   }
+  if (input.id === "merge-base-file") {
+    const outputInput = document.getElementById("merge-output-name");
+    if (outputInput) {
+      outputInput.value = files[0] ? files[0].name : "";
+    }
+  } else if (input.id === "surgical-base-file") {
+    const outputInput = document.getElementById("surgical-output-name");
+    if (outputInput) {
+      outputInput.value = files[0] ? files[0].name : "";
+    }
+  }
 }
 
 function removeSelectedFile(input, fileToRemove) {
@@ -919,9 +930,23 @@ function animateFileListChanges(list, previousRects) {
 
 function setupFileUploadLabels() {
   document.querySelectorAll(".file-input-native").forEach((input) => {
-    selectedFilesByInput.set(input, [...(input.files || [])]);
+    const initialFiles = [...(input.files || [])];
+    selectedFilesByInput.set(input, initialFiles);
     const control = input.nextElementSibling;
     updateFileUploadLabel(input);
+    
+    if (input.id === "merge-base-file") {
+      const outputInput = document.getElementById("merge-output-name");
+      if (outputInput) {
+        outputInput.value = initialFiles[0] ? initialFiles[0].name : "";
+      }
+    } else if (input.id === "surgical-base-file") {
+      const outputInput = document.getElementById("surgical-output-name");
+      if (outputInput) {
+        outputInput.value = initialFiles[0] ? initialFiles[0].name : "";
+      }
+    }
+
     input.addEventListener("change", () => {
       const existing = selectedFilesByInput.get(input) || [];
       const incoming = [...(input.files || [])];
@@ -1032,12 +1057,13 @@ function setupTimingEditor() {
 async function readMergePayload() {
   const form = mergeForm;
   const baseInput = form.querySelector("#merge-base-file");
+  const baseFile = baseInput?.files?.[0];
   const guestInput = form.querySelector("#merge-guest-files");
   const guestFiles = [...(guestInput?.files || [])];
   return {
-    baseFile: await fileToPayload(baseInput?.files?.[0]),
+    baseFile: await fileToPayload(baseFile),
     guestFiles: await Promise.all(guestFiles.map((file) => fileToPayload(file))),
-    outputName: form.querySelector("#merge-output-name").value.trim() || "merged.osu",
+    outputName: form.querySelector("#merge-output-name").value.trim() || baseFile?.name || "merged.osu",
     merge: [...form.querySelectorAll('input[name="mergeSections"]:checked')].map((el) => el.value),
     offsets: {},
     sourceLabels: form.querySelector('input[name="sourceLabels"]').checked,
@@ -1065,11 +1091,12 @@ async function readTimingPayload() {
 async function readSurgicalPayload() {
   const form = surgicalForm;
   const baseInput = form.querySelector("#surgical-base-file");
+  const baseFile = baseInput?.files?.[0];
   const targetInput = form.querySelector("#surgical-target-file");
   return {
-    baseFile: await fileToPayload(baseInput?.files?.[0]),
+    baseFile: await fileToPayload(baseFile),
     targetFile: await fileToPayload(targetInput?.files?.[0]),
-    outputName: form.querySelector("#surgical-output-name").value.trim() || "surgical-fixed.osu",
+    outputName: form.querySelector("#surgical-output-name").value.trim() || baseFile?.name || "surgical-fixed.osu",
     dryRun: form.querySelector('input[name="dryRun"]')?.checked || false,
   };
 }

@@ -116,7 +116,7 @@
                       <span class="tool-tile-name">guest diff bbcode</span>
                       <span class="tile-badge badge-auth"><span class="material-symbols-rounded">lock</span></span>
                     </div>
-                    <p class="tool-tile-desc">spits out bbcode difficulty lists for your forum profile</p>
+                    <p class="tool-tile-desc">generate bbcode lists for your profile</p>
                   </div>
                   <div class="tool-tile-arrow">
                     <span class="material-symbols-rounded">chevron_right</span>
@@ -133,7 +133,7 @@
                       <span class="tool-tile-name">find oldest scores</span>
                       <span class="tile-badge badge-auth"><span class="material-symbols-rounded">lock</span></span>
                     </div>
-                    <p class="tool-tile-desc">digs up the oldest plays on your profile</p>
+                    <p class="tool-tile-desc">finds oldest plays on your profile (to an extent)</p>
                   </div>
                   <div class="tool-tile-arrow">
                     <span class="material-symbols-rounded">chevron_right</span>
@@ -149,7 +149,7 @@
                     <div class="tool-tile-header">
                       <span class="tool-tile-name">collab merger</span>
                     </div>
-                    <p class="tool-tile-desc">smashes notes, timing, and bookmarks from guest maps together</p>
+                    <p class="tool-tile-desc">merges .osu files into a single file</p>
                   </div>
                   <div class="tool-tile-arrow">
                     <span class="material-symbols-rounded">chevron_right</span>
@@ -165,7 +165,7 @@
                     <div class="tool-tile-header">
                       <span class="tool-tile-name">double / half BPM</span>
                     </div>
-                    <p class="tool-tile-desc">speeds up or slows down your map and scales slider velocity</p>
+                    <p class="tool-tile-desc">helps scale slider velocity when changing BPM</p>
                   </div>
                   <div class="tool-tile-arrow">
                     <span class="material-symbols-rounded">chevron_right</span>
@@ -181,7 +181,7 @@
                     <div class="tool-tile-header">
                       <span class="tool-tile-name">surgical timing fix</span>
                     </div>
-                    <p class="tool-tile-desc">steals red timing lines and puts them in other maps without breaking velocity</p>
+                    <p class="tool-tile-desc">copy over timing points without breaking sv</p>
                   </div>
                   <div class="tool-tile-arrow">
                     <span class="material-symbols-rounded">chevron_right</span>
@@ -239,7 +239,7 @@
                           placeholder="https://osu.ppy.sh/users/124493">
                       </div>
                       <div class="field span-2">
-                        <label for="guest-sort">sort by</label>
+                        <label for="guest-sort-trigger">sort by</label>
                         <div style="position: relative; width: 100%; z-index: 10;" id="guest-sort-dropdown">
                           <button type="button" class="guest-sort-btn" id="guest-sort-trigger" aria-expanded="false" aria-controls="guest-sort-panel">
                             <span id="guest-sort-display">Beatmap ID</span>
@@ -449,9 +449,9 @@
                       <span class="file-upload-files" data-file-list-for="merge-guest-files" aria-hidden="true"></span>
                     </label>
                   </div>
-                  <div class="field">
+                  <div class="field span-2">
                     <label for="merge-output-name">output filename</label>
-                    <input id="merge-output-name" name="outputName" type="text" autocomplete="off" placeholder="merged.osu">
+                    <input id="merge-output-name" name="outputName" type="text" autocomplete="off" placeholder="same as base map">
                   </div>
                 </div>
                 <fieldset class="field-set">
@@ -575,9 +575,9 @@
                       <span class="file-upload-files" data-file-list-for="surgical-target-file" aria-hidden="true"></span>
                     </label>
                   </div>
-                  <div class="field">
+                  <div class="field span-2">
                     <label for="surgical-output-name">output filename</label>
-                    <input id="surgical-output-name" name="outputName" type="text" autocomplete="off" placeholder="surgical-fixed.osu">
+                    <input id="surgical-output-name" name="outputName" type="text" autocomplete="off" placeholder="same as base map">
                   </div>
                 </div>
                 <fieldset class="field-set">
