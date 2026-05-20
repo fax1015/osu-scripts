@@ -1,5 +1,7 @@
-import { handleOAuthLogout } from "../../lib/server-handlers.mjs";
+import { handleOAuthLogout, withApiErrorBoundary } from "../../lib/server-handlers.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   await handleOAuthLogout(req, res);
 }
+
+export default withApiErrorBoundary(handler);

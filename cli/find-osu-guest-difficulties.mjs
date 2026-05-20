@@ -10,6 +10,7 @@ const MAIN_BOX_TITLE = "giant list of gds";
 const NOTICE_INTRO = "most recently updated maps are at the top";
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
+const FETCH_TIMEOUT_MS = 15_000;
 const MODES = ["osu", "taiko", "fruits", "mania"];
 const STATUS_TAGS = {
   approved: { label: "Ranked", color: "#b7f36b" },
@@ -207,7 +208,7 @@ function validateOptions(options) {
 }
 
 async function fetchText(url) {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     headers: {
       "user-agent": DEFAULT_USER_AGENT,
       accept: "text/html,application/json;q=0.9,*/*;q=0.8",
@@ -225,7 +226,7 @@ async function fetchText(url) {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     headers: {
       "user-agent": DEFAULT_USER_AGENT,
       accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
@@ -241,7 +242,7 @@ async function fetchJson(url) {
 }
 
 async function fetchApiJson(url, accessToken) {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     headers: {
       "user-agent": DEFAULT_USER_AGENT,
       accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
@@ -254,6 +255,16 @@ async function fetchApiJson(url, accessToken) {
   }
 
   return response.json();
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function extractUserId(value) {
@@ -1073,7 +1084,7 @@ async function main() {
     out("");
     out(summaryMessage);
   } else if (options.output === "-") {
-    summaryMessage = "Output path is "-"; fresh BBCode is included in JSON only (no file written).";
+    summaryMessage = 'Output path is "-"; fresh BBCode is included in JSON only (no file written).';
     out("");
     out(summaryMessage);
   } else {

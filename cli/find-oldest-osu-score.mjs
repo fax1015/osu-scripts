@@ -4,6 +4,7 @@ const DEFAULT_MODES = ["osu", "taiko", "fruits", "mania"];
 const DEFAULT_FEEDS = ["firsts", "best", "recent"];
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
+const FETCH_TIMEOUT_MS = 15_000;
 const RULESET_TO_MODE = {
   0: "osu",
   1: "taiko",
@@ -184,7 +185,7 @@ async function fetchText(url) {
   if (ACCESS_TOKEN) {
     headers.authorization = `Bearer ${ACCESS_TOKEN}`;
   }
-  const response = await fetch(url, { headers });
+  const response = await fetchWithTimeout(url, { headers });
 
   if (!response.ok) {
     throw new Error(`Request failed (${response.status} ${response.statusText}) for ${url}`);
@@ -205,13 +206,23 @@ async function fetchJson(url) {
   if (ACCESS_TOKEN) {
     headers.authorization = `Bearer ${ACCESS_TOKEN}`;
   }
-  const response = await fetch(url, { headers });
+  const response = await fetchWithTimeout(url, { headers });
 
   if (!response.ok) {
     throw new Error(`Request failed (${response.status} ${response.statusText}) for ${url}`);
   }
 
   return response.json();
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function extractUserId(value) {

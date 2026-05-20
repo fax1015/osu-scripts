@@ -1,5 +1,8 @@
 const guestForm = document.querySelector("#guest-form");
 const oldestForm = document.querySelector("#oldest-form");
+const mergeForm = document.querySelector("#merge-form");
+const timingForm = document.querySelector("#timing-form");
+const surgicalForm = document.querySelector("#surgical-form");
 const tokenStatus = document.querySelector("#token-status");
 const saveMenuButton = document.querySelector("#save-settings-menu");
 const loginButton = document.querySelector("#login-osu");
@@ -26,6 +29,9 @@ const terminalBtnZoom = document.querySelector("#terminal-btn-zoom");
 const guestUnifiedTemplate = document.querySelector("#guest-unified-template");
 const guestTemplatePreview = document.querySelector("#guest-template-preview");
 const resetGuestTemplate = document.querySelector("#reset-guest-template");
+const downloadPayloads = new Map();
+const selectedFilesByInput = new WeakMap();
+const renderedFileKeysByInput = new WeakMap();
 
 const GUEST_NOTICE_INTRO_DEFAULT = "most recently updated maps are at the top";
 const GUEST_YEAR_SECTION_DEFAULT = "{year_header}\n{entries}";
@@ -379,7 +385,7 @@ async function init() {
   document.addEventListener("click", onDocumentClickDismissNav);
   document.addEventListener("keydown", onDocumentKeydownMenu);
   document.addEventListener("mousemove", (e) => {
-    for (const card of document.querySelectorAll(".btn-run")) {
+    for (const card of document.querySelectorAll(".btn-run, .file-upload-control")) {
       const rect = card.getBoundingClientRect(),
         x = e.clientX - rect.left,
         y = e.clientY - rect.top;
@@ -450,6 +456,11 @@ async function init() {
 
   guestForm?.addEventListener("submit", (event) => runScript(event, "guest"));
   oldestForm?.addEventListener("submit", (event) => runScript(event, "oldest"));
+  mergeForm?.addEventListener("submit", (event) => runScript(event, "merge"));
+  timingForm?.addEventListener("submit", (event) => runScript(event, "timing"));
+  surgicalForm?.addEventListener("submit", (event) => runScript(event, "surgical"));
+  setupFileUploadLabels();
+  setupTimingEditor();
 
   terminalBtnClose?.addEventListener("click", () => {
     if (runResultsLog) runResultsLog.textContent = "";
@@ -673,7 +684,6 @@ function applySettings(settings) {
   if (oldestForm) {
     oldestForm.querySelector("#oldest-target").value = o.target || "";
     oldestForm.querySelector("#oldest-beatmap").value = o.beatmapId || "";
-    oldestForm.querySelector("#oldest-save-index").value = o.saveIndex || "";
     oldestForm.querySelector("#oldest-page-size").value = String(o.pageSize ?? "");
     oldestForm.querySelector("#oldest-max-pages").value = String(o.maxPages ?? "");
     oldestForm.querySelector("#oldest-result-count").value = String(
@@ -729,7 +739,6 @@ function readOldestPayload() {
   return {
     target: form.querySelector("#oldest-target").value.trim(),
     beatmapId: form.querySelector("#oldest-beatmap").value.trim(),
-    saveIndex: form.querySelector("#oldest-save-index").value.trim(),
     modes: [...form.querySelectorAll('input[name="modes"]:checked')].map((el) => el.value),
     feeds: [...form.querySelectorAll('input[name="feeds"]:checked')].map((el) => el.value),
     pageSize: Number.parseInt(form.querySelector("#oldest-page-size").value, 10) || o.pageSize,
@@ -738,6 +747,300 @@ function readOldestPayload() {
       ? Math.min(resultCountRaw, 100)
       : o.resultCount ?? 5,
     verbose: false,
+  };
+}
+
+function updateFileUploadLabel(input) {
+  const list = document.querySelector(`[data-file-list-for="${CSS.escape(input.id)}"]`);
+  const control = input.nextElementSibling;
+  if (!list) {
+    return;
+  }
+  const files = selectedFilesByInput.get(input) || [...(input.files || [])];
+  const nextKeys = files.map(fileKey);
+  const previousKeys = renderedFileKeysByInput.get(input) || [];
+  const listChanged =
+    nextKeys.length !== previousKeys.length ||
+    nextKeys.some((key, index) => key !== previousKeys[index]);
+  control?.classList.toggle("is-has-file", files.length > 0);
+  list.setAttribute("aria-hidden", files.length > 0 ? "false" : "true");
+  if (!listChanged) {
+    return;
+  }
+
+  const previousRects = new Map(
+    [...list.querySelectorAll(".file-upload-file")]
+      .map((item) => [item.dataset.fileKey, item.getBoundingClientRect()]),
+  );
+
+  if (files.length === 0) {
+    list.replaceChildren();
+    renderedFileKeysByInput.set(input, nextKeys);
+    return;
+  }
+  list.replaceChildren(
+    ...files.map((file) => {
+      const item = document.createElement("span");
+      item.className = "file-upload-file";
+      item.dataset.fileKey = fileKey(file);
+      const name = document.createElement("span");
+      name.className = "file-upload-file-name";
+      name.textContent = file.name;
+      const size = document.createElement("span");
+      size.className = "file-upload-file-size";
+      size.textContent = formatFileSize(file.size);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "file-upload-file-remove";
+      remove.setAttribute("aria-label", `Remove ${file.name}`);
+      remove.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">close</span>';
+      remove.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeSelectedFile(input, file);
+      });
+      item.append(name, size, remove);
+      return item;
+    }),
+  );
+  renderedFileKeysByInput.set(input, nextKeys);
+  animateFileListChanges(list, previousRects);
+}
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "";
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function fileKey(file) {
+  return [file.name, file.size, file.lastModified].join(":");
+}
+
+function mergeFiles(existing, incoming, multiple) {
+  if (!multiple) {
+    return incoming.slice(0, 1);
+  }
+  const byKey = new Map(existing.map((file) => [fileKey(file), file]));
+  for (const file of incoming) {
+    byKey.set(fileKey(file), file);
+  }
+  return [...byKey.values()];
+}
+
+function syncSelectedFiles(input, files) {
+  selectedFilesByInput.set(input, files);
+  const transfer = new DataTransfer();
+  for (const file of files) {
+    transfer.items.add(file);
+  }
+  input.files = transfer.files;
+  updateFileUploadLabel(input);
+  if (input.closest("#timing-form")) {
+    updateTimingSummary();
+  }
+}
+
+function removeSelectedFile(input, fileToRemove) {
+  const removeKey = fileKey(fileToRemove);
+  const next = (selectedFilesByInput.get(input) || [...(input.files || [])])
+    .filter((file) => fileKey(file) !== removeKey);
+  syncSelectedFiles(input, next);
+}
+
+function animateFileListChanges(list, previousRects) {
+  requestAnimationFrame(() => {
+    for (const item of list.querySelectorAll(".file-upload-file")) {
+      const previous = previousRects.get(item.dataset.fileKey);
+      if (!previous) {
+        item.animate(
+          [
+            { opacity: 0, transform: "translateY(6px)" },
+            { opacity: 1, transform: "translateY(0)" },
+          ],
+          { duration: 180, easing: "cubic-bezier(0.075, 0.82, 0.165, 1)" },
+        );
+        continue;
+      }
+
+      const next = item.getBoundingClientRect();
+      const deltaX = previous.left - next.left;
+      const deltaY = previous.top - next.top;
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+        continue;
+      }
+      item.animate(
+        [
+          { transform: `translate(${deltaX}px, ${deltaY}px)` },
+          { transform: "translate(0, 0)" },
+        ],
+        { duration: 220, easing: "cubic-bezier(0.075, 0.82, 0.165, 1)" },
+      );
+    }
+  });
+}
+
+function setupFileUploadLabels() {
+  document.querySelectorAll(".file-input-native").forEach((input) => {
+    selectedFilesByInput.set(input, [...(input.files || [])]);
+    const control = input.nextElementSibling;
+    updateFileUploadLabel(input);
+    input.addEventListener("change", () => {
+      const existing = selectedFilesByInput.get(input) || [];
+      const incoming = [...(input.files || [])];
+      syncSelectedFiles(input, mergeFiles(existing, incoming, input.multiple));
+    });
+    if (!control?.classList.contains("file-upload-control")) {
+      return;
+    }
+    control.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      control.classList.add("is-drag-over");
+    });
+    control.addEventListener("dragleave", () => {
+      control.classList.remove("is-drag-over");
+    });
+    control.addEventListener("drop", (event) => {
+      event.preventDefault();
+      control.classList.remove("is-drag-over");
+      const files = [...(event.dataTransfer?.files || [])].filter((file) =>
+        file.name.toLowerCase().endsWith(".osu"),
+      );
+      if (files.length === 0) {
+        return;
+      }
+      const existing = selectedFilesByInput.get(input) || [];
+      syncSelectedFiles(input, mergeFiles(existing, files, input.multiple));
+    });
+  });
+}
+
+async function fileToPayload(file) {
+  if (!file) {
+    return null;
+  }
+  return {
+    name: file.name,
+    content: await file.text(),
+  };
+}
+
+function selectedTimingTransform() {
+  return timingForm?.querySelector('input[name="timingTransform"]:checked')?.value || "double";
+}
+
+function timingTransformConfig(transform = selectedTimingTransform()) {
+  if (transform === "half") {
+    return {
+      value: "half",
+      label: "Halve BPM",
+      summary: "Halve BPM on selected maps · inherited SV x2",
+      suffix: "half-bpm",
+      bpmScale: "0.5",
+      svScale: "2",
+    };
+  }
+  return {
+    value: "double",
+    label: "Double BPM",
+    summary: "Double BPM on selected maps · inherited SV x0.5",
+    suffix: "double-bpm",
+    bpmScale: "2",
+    svScale: "0.5",
+  };
+}
+
+function timingOutputName(inputName, suffix) {
+  const name = inputName || "map.osu";
+  const withoutExtension = name.toLowerCase().endsWith(".osu")
+    ? name.slice(0, -4)
+    : name;
+  return `${withoutExtension}-${suffix}.osu`;
+}
+
+function timingSingleFileSettings(settings, mapFile) {
+  return {
+    mapFile,
+    outputName: timingOutputName(mapFile?.name, settings.outputSuffix),
+    svScale: settings.svScale,
+    bpmScale: settings.bpmScale,
+    dryRun: false,
+  };
+}
+
+function updateTimingTransformCards() {
+  timingForm?.querySelectorAll(".timing-action-card").forEach((card) => {
+    const transform = card.dataset.timingTransformCard;
+    card.classList.toggle("is-active", transform === selectedTimingTransform());
+  });
+}
+
+function updateTimingSummary() {
+  updateTimingTransformCards();
+}
+
+function setupTimingEditor() {
+  if (!timingForm) {
+    return;
+  }
+
+  timingForm.querySelectorAll('input[name="timingTransform"], #timing-map-file').forEach((input) => {
+    input.addEventListener("input", updateTimingSummary);
+    input.addEventListener("change", updateTimingSummary);
+  });
+
+  updateTimingSummary();
+}
+
+async function readMergePayload() {
+  const form = mergeForm;
+  const baseInput = form.querySelector("#merge-base-file");
+  const guestInput = form.querySelector("#merge-guest-files");
+  const guestFiles = [...(guestInput?.files || [])];
+  return {
+    baseFile: await fileToPayload(baseInput?.files?.[0]),
+    guestFiles: await Promise.all(guestFiles.map((file) => fileToPayload(file))),
+    outputName: form.querySelector("#merge-output-name").value.trim() || "merged.osu",
+    merge: [...form.querySelectorAll('input[name="mergeSections"]:checked')].map((el) => el.value),
+    offsets: {},
+    sourceLabels: form.querySelector('input[name="sourceLabels"]').checked,
+    dedupeTimingPoints: form.querySelector('input[name="dedupeTimingPoints"]').checked,
+    dryRun: form.querySelector('input[name="dryRun"]').checked,
+  };
+}
+
+async function readTimingPayload() {
+  const form = timingForm;
+  const mapInput = form.querySelector("#timing-map-file");
+  const config = timingTransformConfig();
+  const mapFiles = await Promise.all([...(mapInput?.files || [])].map((file) => fileToPayload(file)));
+  return {
+    mapFiles,
+    transform: config.value,
+    transformLabel: config.label,
+    outputSuffix: config.suffix,
+    svScale: config.svScale,
+    bpmScale: config.bpmScale,
+    dryRun: false,
+  };
+}
+
+async function readSurgicalPayload() {
+  const form = surgicalForm;
+  const baseInput = form.querySelector("#surgical-base-file");
+  const targetInput = form.querySelector("#surgical-target-file");
+  return {
+    baseFile: await fileToPayload(baseInput?.files?.[0]),
+    targetFile: await fileToPayload(targetInput?.files?.[0]),
+    outputName: form.querySelector("#surgical-output-name").value.trim() || "surgical-fixed.osu",
+    dryRun: form.querySelector('input[name="dryRun"]')?.checked || false,
   };
 }
 
@@ -924,13 +1227,30 @@ function bbcodeToHtml(bbcode) {
   html = html.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>');
   html = html.replace(/\[size=\d+\]([\s\S]*?)\[\/size\]/gi, '<span class="bbcode-preview-small">$1</span>');
   html = html.replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, (_match, color, body) => {
-    return `<span style="color:${color}">${body}</span>`;
+    return `<span style="color:${safeCssColor(color)}">${body}</span>`;
   });
   html = html.replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_match, url, label) => {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    return `<a href="${escapeHtml(safeHref(url))}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   });
 
   return html.replace(/\n/g, '<br>');
+}
+
+function safeHref(raw) {
+  const value = String(raw || "").trim();
+  try {
+    const url = new URL(value, window.location.origin);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
+function safeCssColor(raw) {
+  const value = String(raw || "").trim();
+  return /^(#[0-9a-f]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0|1|0?\.\d+)\s*\))$/i.test(value)
+    ? value
+    : "inherit";
 }
 
 function renderGuestStatusLine(data) {
@@ -1060,6 +1380,155 @@ function renderOldestStructured(data) {
   return `${blurb}<ul class="oldest-scores" role="list">${items}</ul>`;
 }
 
+function registerOutputDownload(file) {
+  if (!file?.content) {
+    return "";
+  }
+  const id = `osu-download-${Math.random().toString(36).slice(2)}`;
+  downloadPayloads.set(id, file);
+  return `<button type="button" class="btn btn-secondary btn-sm" data-download-osu="${id}">Download</button>`;
+}
+
+function renderMergeStructured(data) {
+  const outputName = data.outputFile?.name || data.outputPath || "merged.osu";
+  const outputText = data.outputFile?.content || "";
+  const guestItems = (data.guests || [])
+    .map((guest) => {
+      const added = guest.added || {};
+      const bits = [
+        added.hitobjects != null ? `+${added.hitobjects} hitobjects` : null,
+        added.timing != null ? `+${added.timing} timing points` : null,
+        added.timingDuplicates ? `${added.timingDuplicates} duplicate timing points skipped` : null,
+        added.breaks != null ? `+${added.breaks} breaks` : null,
+        added.bookmarks != null ? `+${added.bookmarks} bookmarks` : null,
+      ].filter(Boolean);
+      return `<li class="oldest-score-card" role="article">
+        <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">+</div>
+        <div class="oldest-score-main">
+          <div class="oldest-score-time">${escapeHtml(guest.offset ? `${guest.offset}ms offset` : "merged")}</div>
+          <div class="oldest-score-title">${escapeHtml(guest.name || "guest.osu")}</div>
+          <div class="oldest-score-meta">${escapeHtml(bits.join(" · ") || "no selected sections")}</div>
+        </div>
+      </li>`;
+    })
+    .join("");
+  const warnings = (data.warnings || [])
+    .map((warning) => `<li>${escapeHtml(warning)}</li>`)
+    .join("");
+  return [
+    `<ul class="oldest-scores" role="list">
+      <li class="oldest-score-card" role="article">
+        <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">1</div>
+        <div class="oldest-score-main">
+          <div class="oldest-score-time">${escapeHtml(data.dryRun ? "dry run" : "output ready")}</div>
+          <div class="oldest-score-title">${escapeHtml(outputName)}</div>
+          <div class="oldest-score-meta">${escapeHtml((data.merge || []).join(" · ") || "hitobjects · timing")}</div>
+        </div>
+      </li>
+    </ul>`,
+    outputText
+      ? `<pre class="log-pre osu-output-preview">${escapeHtml(outputText)}</pre>`
+      : "",
+    data.outputFile
+      ? `<p class="bbcode-actions">${registerOutputDownload(data.outputFile)}</p>`
+      : "",
+    guestItems ? `<ul class="oldest-scores" role="list">${guestItems}</ul>` : "",
+    warnings ? `<p class="oldest-results-note">warnings</p><ul class="score-list">${warnings}</ul>` : "",
+  ].join("");
+}
+
+function renderTimingStructured(data) {
+  const changed = data.changed || {};
+  const outputName = data.outputFile?.name || data.outputPath || "map-edited.osu";
+  const items = [
+    changed.uninheritedBpmScaled != null ? `${changed.uninheritedBpmScaled} timing point${changed.uninheritedBpmScaled === 1 ? "" : "s"}` : null,
+    changed.inheritedScaled != null ? `${changed.inheritedScaled} inherited point${changed.inheritedScaled === 1 ? "" : "s"}` : null,
+  ]
+    .filter(Boolean)
+    .map((item) => `<div class="oldest-score-meta">${escapeHtml(item)}</div>`)
+    .join("");
+  return [
+    `<ul class="oldest-scores" role="list">
+      <li class="oldest-score-card" role="article">
+        <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">1</div>
+        <div class="oldest-score-main">
+          <div class="oldest-score-time">${escapeHtml(data.dryRun ? "dry run" : "output ready")}</div>
+          <div class="oldest-score-title">${escapeHtml(outputName)}</div>
+          ${items || '<div class="oldest-score-meta">no timing points changed</div>'}
+        </div>
+        <div class="oldest-score-action">
+          ${registerOutputDownload(data.outputFile)}
+        </div>
+      </li>
+    </ul>`,
+  ].join("");
+}
+
+function renderTimingBatchStructured(data) {
+  const files = data.files || [];
+  const transformDone = data.transform === "half" ? "bpm halved" : "bpm doubled";
+  const items = files
+    .map((file, index) => {
+      const changed = file.structured?.changed || {};
+      const outputFile = file.structured?.outputFile;
+      const outputName = outputFile?.name || file.outputName || "map-edited.osu";
+      const meta = [
+        changed.uninheritedBpmScaled != null ? `${changed.uninheritedBpmScaled} timing point${changed.uninheritedBpmScaled === 1 ? "" : "s"}` : null,
+        changed.inheritedScaled != null ? `${changed.inheritedScaled} inherited point${changed.inheritedScaled === 1 ? "" : "s"}` : null,
+      ].filter(Boolean).join(" · ");
+      return `<li class="oldest-score-card" role="article">
+        <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">${index + 1}</div>
+        <div class="oldest-score-main">
+          <div class="oldest-score-time">${escapeHtml(file.ok ? "output ready" : "failed")}</div>
+          <div class="oldest-score-title">${escapeHtml(outputName)}</div>
+          <div class="oldest-score-meta">${escapeHtml(meta || "no timing points changed")}</div>
+        </div>
+        <div class="oldest-score-action">
+          ${registerOutputDownload(outputFile)}
+        </div>
+      </li>`;
+    })
+    .join("");
+
+  return [
+    `<p class="oldest-results-note">${escapeHtml(transformDone)} for ${files.length} file${files.length === 1 ? "" : "s"}.</p>`,
+    `<ul class="oldest-scores" role="list">${items}</ul>`,
+  ].join("");
+}
+
+function renderSurgicalStructured(data) {
+  const changed = data.changed || {};
+  const outputName = data.outputFile?.name || data.outputPath || "surgical-fixed.osu";
+  const meta = [
+    changed.copiedUninherited != null ? `${changed.copiedUninherited} BPM timing point${changed.copiedUninherited === 1 ? "" : "s"} copied` : null,
+    changed.inheritedAdjusted != null ? `${changed.inheritedAdjusted} inherited point${changed.inheritedAdjusted === 1 ? "" : "s"} adjusted` : null,
+    changed.inheritedSkipped ? `${changed.inheritedSkipped} inherited point${changed.inheritedSkipped === 1 ? "" : "s"} unchanged` : null,
+  ].filter(Boolean);
+  return `<ul class="oldest-scores" role="list">
+    <li class="oldest-score-card" role="article">
+      <div class="oldest-score-mono oldest-score-idx" aria-hidden="true">1</div>
+      <div class="oldest-score-main">
+        <div class="oldest-score-time">${escapeHtml(data.dryRun ? "dry run" : "output ready")}</div>
+        <div class="oldest-score-title">${escapeHtml(outputName)}</div>
+        <div class="oldest-score-meta">${escapeHtml(meta.join(" · ") || "no timing points changed")}</div>
+      </div>
+      <div class="oldest-score-action">
+        ${registerOutputDownload(data.outputFile)}
+      </div>
+    </li>
+  </ul>`;
+}
+
+function renderStructuredResult(script, data) {
+  if (script === "guest") return renderGuestStructured(data);
+  if (script === "oldest") return renderOldestStructured(data);
+  if (script === "merge") return renderMergeStructured(data);
+  if (data?.type === "timing-batch") return renderTimingBatchStructured(data);
+  if (script === "timing") return renderTimingStructured(data);
+  if (script === "surgical") return renderSurgicalStructured(data);
+  return `<pre class="log-pre" style="max-height:none">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+}
+
 function wireCopyButtons(container) {
   container.querySelectorAll("[data-copy-target]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1094,6 +1563,22 @@ function wireCopyButtons(container) {
         viewBtn.classList.toggle("is-active", active);
         viewBtn.setAttribute("aria-selected", active ? "true" : "false");
       });
+    });
+  });
+
+  container.querySelectorAll("[data-download-osu]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const file = downloadPayloads.get(btn.getAttribute("data-download-osu"));
+      if (!file?.content) return;
+      const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.name || "output.osu";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
     });
   });
 }
@@ -1210,19 +1695,16 @@ async function fetchRunResult(payload, logEl) {
 
 async function runScript(event, script) {
   event.preventDefault();
-  if (!loggedIn(latestSettings)) {
+  if ((script === "guest" || script === "oldest") && !loggedIn(latestSettings)) {
     return;
   }
-  const form = script === "guest" ? guestForm : oldestForm;
+  const form =
+    script === "guest" ? guestForm :
+    script === "oldest" ? oldestForm :
+    script === "merge" ? mergeForm :
+    script === "timing" ? timingForm :
+    surgicalForm;
   const submit = form.querySelector('button[type="submit"]');
-  const target =
-    script === "guest" ? readGuestPayload().target : readOldestPayload().target;
-  if (!target) {
-    setAccountFeedback("enter a profile URL, username, or user id.", "is-warn");
-    const focusSel = script === "guest" ? "#guest-target" : "#oldest-target";
-    form.querySelector(focusSel)?.focus();
-    return;
-  }
 
   submit.disabled = true;
   const bodyEl = runResultsBody;
@@ -1234,7 +1716,78 @@ async function runScript(event, script) {
   logEl.closest("details")?.setAttribute("open", "");
 
   try {
-    const settings = script === "guest" ? readGuestPayload() : readOldestPayload();
+    const settings =
+      script === "guest" ? readGuestPayload() :
+      script === "oldest" ? readOldestPayload() :
+      script === "merge" ? await readMergePayload() :
+      script === "timing" ? await readTimingPayload() :
+      await readSurgicalPayload();
+    const target =
+      script === "guest" || script === "oldest" ? settings.target : "";
+
+    if ((script === "guest" || script === "oldest") && !target) {
+      setAccountFeedback("enter a profile URL, username, or user id.", "is-warn");
+      const focusSel = script === "guest" ? "#guest-target" : "#oldest-target";
+      form.querySelector(focusSel)?.focus();
+      bodyEl.innerHTML = '<p class="tool-results-hint">run some scripts to see output here</p>';
+      return;
+    }
+    if (script === "merge" && !settings.baseFile) {
+      form.querySelector("#merge-base-file")?.focus();
+      throw new Error("choose a base .osu file.");
+    }
+    if (script === "merge" && settings.guestFiles.length === 0) {
+      form.querySelector("#merge-guest-files")?.focus();
+      throw new Error("choose at least one guest .osu file.");
+    }
+    if (script === "surgical" && !settings.baseFile) {
+      form.querySelector("#surgical-base-file")?.focus();
+      throw new Error("choose a base .osu file.");
+    }
+    if (script === "surgical" && !settings.targetFile) {
+      form.querySelector("#surgical-target-file")?.focus();
+      throw new Error("choose a target .osu file.");
+    }
+    if (script === "timing" && (!Array.isArray(settings.mapFiles) || settings.mapFiles.length === 0)) {
+      form.querySelector("#timing-map-file")?.focus();
+      throw new Error("choose at least one map .osu file.");
+    }
+    if (script === "timing") {
+      const files = [];
+      for (const [index, mapFile] of settings.mapFiles.entries()) {
+        bodyEl.innerHTML = `<p>running ${index + 1}/${settings.mapFiles.length}…</p>`;
+        const fileSettings = timingSingleFileSettings(settings, mapFile);
+        const result = await fetchRunResult({ script, target, settings: fileSettings }, logEl);
+        files.push({
+          ok: result.ok,
+          code: result.code,
+          inputName: mapFile.name,
+          outputName: fileSettings.outputName,
+          structured: result.structured,
+        });
+      }
+
+      const structured = {
+        type: "timing-batch",
+        transform: settings.transform,
+        transformLabel: settings.transformLabel,
+        files,
+      };
+      bodyEl.innerHTML = renderStructuredResult(script, structured);
+      wireCopyButtons(bodyEl);
+
+      if (files.some((file) => !file.ok)) {
+        bodyEl.insertAdjacentHTML(
+          "afterbegin",
+          '<p class="token-status is-warn" style="max-width:none">one or more files failed.</p>',
+        );
+      }
+
+      latestSettings = settingsWithMigratedGuest(await fetchJson("/api/settings"));
+      updateTokenStatus(latestSettings);
+      return;
+    }
+
     const payload = { script, target, settings };
     const result = await fetchRunResult(payload, logEl);
 
@@ -1243,10 +1796,7 @@ async function runScript(event, script) {
     }
 
     if (result.structured) {
-      bodyEl.innerHTML =
-        script === "guest"
-          ? renderGuestStructured(result.structured)
-          : renderOldestStructured(result.structured);
+      bodyEl.innerHTML = renderStructuredResult(script, result.structured);
       wireCopyButtons(bodyEl);
     } else {
       bodyEl.innerHTML = `<pre class="log-pre" style="max-height:none">${escapeHtml(

@@ -1,5 +1,7 @@
-import { handleShutdown } from "../lib/server-handlers.mjs";
+import { handleShutdown, withApiErrorBoundary } from "../lib/server-handlers.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   await handleShutdown(req, res);
 }
+
+export default withApiErrorBoundary(handler);

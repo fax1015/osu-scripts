@@ -12,6 +12,7 @@
     "ui": "node scripts/local-server.mjs",
     "open": "node scripts/local-server.mjs --open",
     "build:preview": "node scripts/bundle-preview.mjs",
+    "check": "node scripts/check-syntax.mjs",
     "dev:vercel": "vercel dev"
   },
   "dependencies": {}

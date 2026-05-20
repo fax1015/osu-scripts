@@ -1,5 +1,7 @@
-import { handleRunStream } from "../../lib/server-handlers.mjs";
+import { handleRunStream, withApiErrorBoundary } from "../../lib/server-handlers.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   await handleRunStream(req, res);
 }
+
+export default withApiErrorBoundary(handler);

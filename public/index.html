@@ -32,6 +32,9 @@
         <nav id="nav-anchors" class="nav-anchors signed-in-only" aria-label="Page sections">
           <a href="#guest-difficulties">guest diff bbcode</a>
           <a href="#oldest-scores">find oldest scores</a>
+          <a href="#collab-merger">collab merger</a>
+          <a href="#timing-editor">timing editor</a>
+          <a href="#surgical-timing-fix">surgical timing fix</a>
         </nav>
 
         <div class="nav-actions">
@@ -93,6 +96,7 @@
           <div class="hero-cta signed-in-only">
             <a class="btn btn-primary" href="#guest-difficulties">guest diff bbcode</a>
             <a class="btn btn-secondary" href="#oldest-scores">find oldest scores</a>
+            <a class="btn btn-secondary" href="#collab-merger">merge collab</a>
           </div>
           <a href="#guest-difficulties" class="hero-scroll-hint signed-in-only">
             <span class="visually-hidden">Scroll to tools</span>
@@ -119,12 +123,12 @@
         </div>
       </section>
 
-      <div class="signed-in-only" id="tools-shell" aria-label="Script tools">
+      <div id="tools-shell" aria-label="Script tools">
       <div class="divider"></div>
 
       <div class="tools-page-layout">
         <div class="tools-main">
-          <section id="guest-difficulties" class="page-section" aria-labelledby="guest-heading">
+          <section id="guest-difficulties" class="page-section signed-in-only" aria-labelledby="guest-heading">
             <div class="section-intro">
               <h2 id="guest-heading" class="section-title">guest difficulty BBCode list</h2>
               <p class="section-lead">
@@ -254,7 +258,7 @@
             </div>
           </section>
 
-          <section id="oldest-scores" class="page-section" aria-labelledby="oldest-heading">
+          <section id="oldest-scores" class="page-section signed-in-only" aria-labelledby="oldest-heading">
             <div class="section-intro">
               <h2 id="oldest-heading" class="section-title">find oldest scores</h2>
               <p class="section-lead">
@@ -275,11 +279,6 @@
                     <label for="oldest-beatmap">beatmap ID</label>
                     <input id="oldest-beatmap" name="beatmapId" type="text" autocomplete="off"
                       placeholder="optional; eg: 2778999">
-                  </div>
-                  <div class="field" hidden>
-                    <label for="oldest-save-index">save index</label>
-                    <input id="oldest-save-index" name="saveIndex" type="text" autocomplete="off"
-                      placeholder="scores.json">
                   </div>
                   <div class="field" hidden>
                     <label for="oldest-page-size">page size</label>
@@ -310,6 +309,189 @@
                     <label class="chip"><input type="checkbox" name="feeds" value="firsts"> firsts</label>
                     <label class="chip"><input type="checkbox" name="feeds" value="best"> best</label>
                     <label class="chip"><input type="checkbox" name="feeds" value="recent"> recent</label>
+                  </div>
+                </fieldset>
+                <div class="form-actions btn-run-container">
+                  <button class="btn btn-run" type="submit">
+                    <div class="btn-run-content">
+                      <span>Run</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section id="collab-merger" class="page-section" aria-labelledby="collab-heading">
+            <div class="section-intro">
+              <h2 id="collab-heading" class="section-title">collab sections merger</h2>
+              <p class="section-lead">
+                merges .osu sections into a base map
+              </p>
+            </div>
+
+            <div class="panel">
+              <form id="merge-form" class="tool-form">
+                <div class="form-grid">
+                  <div class="field span-2">
+                    <label for="merge-base-file">base .osu file</label>
+                    <input id="merge-base-file" class="file-input-native" name="baseFile" type="file" accept=".osu,text/plain">
+                    <label class="file-upload-control" for="merge-base-file">
+                      <span class="file-upload-main">
+                        <span class="material-symbols-rounded file-upload-icon" aria-hidden="true">upload_file</span>
+                        <span class="file-upload-title">Drop base map here</span>
+                        <span class="file-upload-subtitle">or <span>browse file</span></span>
+                      </span>
+                      <span class="file-upload-files" data-file-list-for="merge-base-file" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                  <div class="field span-2">
+                    <label for="merge-guest-files">guest .osu files</label>
+                    <input id="merge-guest-files" class="file-input-native" name="guestFiles" type="file" accept=".osu,text/plain" multiple>
+                    <label class="file-upload-control" for="merge-guest-files">
+                      <span class="file-upload-main">
+                        <span class="material-symbols-rounded file-upload-icon" aria-hidden="true">upload_file</span>
+                        <span class="file-upload-title">Drop guest maps here</span>
+                        <span class="file-upload-subtitle">or <span>browse files</span></span>
+                      </span>
+                      <span class="file-upload-files" data-file-list-for="merge-guest-files" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                  <div class="field">
+                    <label for="merge-output-name">output filename</label>
+                    <input id="merge-output-name" name="outputName" type="text" autocomplete="off" placeholder="merged.osu">
+                  </div>
+                </div>
+                <fieldset class="field-set">
+                  <legend>merge sections</legend>
+                  <div class="chip-group">
+                    <label class="chip"><input type="checkbox" name="mergeSections" value="hitobjects" checked> hitobjects</label>
+                    <label class="chip"><input type="checkbox" name="mergeSections" value="timing" checked> timing</label>
+                    <label class="chip"><input type="checkbox" name="mergeSections" value="breaks"> breaks</label>
+                    <label class="chip"><input type="checkbox" name="mergeSections" value="bookmarks"> bookmarks</label>
+                  </div>
+                </fieldset>
+                <fieldset class="field-set">
+                  <legend>options</legend>
+                  <div class="chip-group">
+                    <label class="chip"><input type="checkbox" name="sourceLabels"> source labels</label>
+                    <label class="chip"><input type="checkbox" name="dedupeTimingPoints"> dedupe timing points</label>
+                    <label class="chip"><input type="checkbox" name="dryRun"> dry run</label>
+                  </div>
+                </fieldset>
+                <div class="form-actions btn-run-container">
+                  <button class="btn btn-run" type="submit">
+                    <div class="btn-run-content">
+                      <span>Run</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section id="timing-editor" class="page-section" aria-labelledby="timing-heading">
+            <div class="section-intro">
+              <h2 id="timing-heading" class="section-title">double / half BPM</h2>
+              <p class="section-lead">
+                lets say you finished a map but, uh oh... you mapped it in double bpm.... this script fixes it!! yippie!! 
+              </p>
+            </div>
+
+            <div class="panel">
+              <form id="timing-form" class="tool-form">
+                <div class="form-grid">
+                  <div class="field span-2">
+                    <label for="timing-map-file">map .osu files</label>
+                    <input id="timing-map-file" class="file-input-native" name="mapFiles" type="file" accept=".osu,text/plain" multiple>
+                    <label class="file-upload-control" for="timing-map-file">
+                      <span class="file-upload-main">
+                        <span class="material-symbols-rounded file-upload-icon" aria-hidden="true">upload_file</span>
+                        <span class="file-upload-title">Drop maps here</span>
+                        <span class="file-upload-subtitle">or <span>browse files</span></span>
+                      </span>
+                      <span class="file-upload-files" data-file-list-for="timing-map-file" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="timing-action-grid" aria-label="BPM transform">
+                  <section class="timing-action-card" data-timing-transform-card="double">
+                    <label class="timing-action-toggle">
+                      <input type="radio" name="timingTransform" value="double" checked>
+                      <span>
+                        <span class="timing-action-title">doubletime</span>
+                        <span class="timing-action-subtitle">red lines x2 · green lines x0.5</span>
+                      </span>
+                    </label>
+                  </section>
+
+                  <section class="timing-action-card" data-timing-transform-card="half">
+                    <label class="timing-action-toggle">
+                      <input type="radio" name="timingTransform" value="half">
+                      <span>
+                        <span class="timing-action-title">halftime</span>
+                        <span class="timing-action-subtitle">red lines x0.5 · green lines x2</span>
+                      </span>
+                    </label>
+                  </section>
+                </div>
+
+                <div class="form-actions btn-run-container">
+                  <button class="btn btn-run" type="submit">
+                    <div class="btn-run-content">
+                      <span>Run</span>
+                    </div>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section id="surgical-timing-fix" class="page-section" aria-labelledby="surgical-heading">
+            <div class="section-intro">
+              <h2 id="surgical-heading" class="section-title">surgical timing fix</h2>
+              <p class="section-lead">
+                copies red BPM lines from a base map into a target map, then rescales target green lines so sliders stay intact
+              </p>
+            </div>
+
+            <div class="panel">
+              <form id="surgical-form" class="tool-form">
+                <div class="form-grid">
+                  <div class="field span-2">
+                    <label for="surgical-base-file">base .osu file</label>
+                    <input id="surgical-base-file" class="file-input-native" name="baseFile" type="file" accept=".osu,text/plain">
+                    <label class="file-upload-control" for="surgical-base-file">
+                      <span class="file-upload-main">
+                        <span class="material-symbols-rounded file-upload-icon" aria-hidden="true">upload_file</span>
+                        <span class="file-upload-title">Drop base map here</span>
+                        <span class="file-upload-subtitle">or <span>browse file</span></span>
+                      </span>
+                      <span class="file-upload-files" data-file-list-for="surgical-base-file" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                  <div class="field span-2">
+                    <label for="surgical-target-file">target .osu file</label>
+                    <input id="surgical-target-file" class="file-input-native" name="targetFile" type="file" accept=".osu,text/plain">
+                    <label class="file-upload-control" for="surgical-target-file">
+                      <span class="file-upload-main">
+                        <span class="material-symbols-rounded file-upload-icon" aria-hidden="true">upload_file</span>
+                        <span class="file-upload-title">Drop target map here</span>
+                        <span class="file-upload-subtitle">or <span>browse file</span></span>
+                      </span>
+                      <span class="file-upload-files" data-file-list-for="surgical-target-file" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                  <div class="field">
+                    <label for="surgical-output-name">output filename</label>
+                    <input id="surgical-output-name" name="outputName" type="text" autocomplete="off" placeholder="surgical-fixed.osu">
+                  </div>
+                </div>
+                <fieldset class="field-set">
+                  <legend>options</legend>
+                  <div class="chip-group">
+                    <label class="chip"><input type="checkbox" name="dryRun"> dry run</label>
                   </div>
                 </fieldset>
                 <div class="form-actions btn-run-container">

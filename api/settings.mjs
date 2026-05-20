@@ -1,5 +1,7 @@
-import { handleSettings } from "../lib/server-handlers.mjs";
+import { handleSettings, withApiErrorBoundary } from "../lib/server-handlers.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   await handleSettings(req, res);
 }
+
+export default withApiErrorBoundary(handler);

@@ -1,5 +1,7 @@
-import { handleOAuthStart } from "../../../lib/server-handlers.mjs";
+import { handleOAuthStart, withApiErrorBoundary } from "../../../lib/server-handlers.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   await handleOAuthStart(req, res);
 }
+
+export default withApiErrorBoundary(handler);
