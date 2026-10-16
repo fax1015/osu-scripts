@@ -239,6 +239,23 @@ function getGuestPartsFromUI() {
 
 let latestSettings = null;
 
+/**
+ * Feature flag: hide tools that aren't ready for deployment yet.
+ * Covers collab merger, timing editor, and surgical timing fix
+ * (nav links, dashboard tiles, and page sections marked with data-wip).
+ * Flip to true when they're ready to ship.
+ */
+const SHOW_WIP_TOOLS = false;
+
+function applyWipToolsFlag() {
+  if (SHOW_WIP_TOOLS) {
+    return;
+  }
+  document.querySelectorAll("[data-wip]").forEach((el) => {
+    el.hidden = true;
+  });
+}
+
 function loggedIn(settings) {
   return Boolean(settings?.oauth?.loggedInUser?.username);
 }
@@ -363,6 +380,7 @@ init().catch((error) => {
 
 async function init() {
   latestSettings = settingsWithMigratedGuest(await fetchJson("/api/settings"));
+  applyWipToolsFlag();
   applySettings(latestSettings);
   updateTokenStatus(latestSettings);
   updateCloseAppVisibility(latestSettings);

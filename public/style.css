@@ -1113,6 +1113,12 @@ body.is-signed-in .nav-lock-badge {
   color: var(--text-pink);
 }
 
+/* WIP tools (data-wip) are hidden via the SHOW_WIP_TOOLS flag in app.js.
+   display rules elsewhere would override [hidden], so force it here. */
+[data-wip][hidden] {
+  display: none !important;
+}
+
 /* Hide lock badge completely when signed in */
 body.is-signed-in .tool-tile[data-requires-auth="true"] .badge-auth {
   display: none !important;
@@ -1149,9 +1155,9 @@ body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-n
   color: var(--text-main);
 }
 
-body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-arrow {
-  opacity: 0;
-  transform: translateX(-4px);
+/* Locked tools don't navigate, so they get no chevron at all when signed out */
+body:not(.is-signed-in) .tool-tile[data-requires-auth="true"] .tool-tile-arrow {
+  display: none;
 }
 
 body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-desc {

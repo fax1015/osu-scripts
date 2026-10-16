@@ -9,7 +9,7 @@ const DEFAULT_CONCURRENCY = 6;
 const MAIN_BOX_TITLE = "giant list of gds";
 const NOTICE_INTRO = "most recently updated maps are at the top";
 const DEFAULT_USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
+  "osu-scripts/1.0 (+https://github.com/fax1015/osu-scripts; Node.js)";
 const FETCH_TIMEOUT_MS = 15_000;
 const MODES = ["osu", "taiko", "fruits", "mania"];
 const STATUS_TAGS = {
@@ -207,8 +207,47 @@ function validateOptions(options) {
   }
 }
 
+function describeFetchError(response, url) {
+  const base = `Request failed (${response.status} ${response.statusText}) for ${url}`;
+  if (response.status === 403) {
+    return (
+      `${base}. osu! refused the request (Cloudflare/bot protection). ` +
+      "Retry in a few seconds; if this runs on a hosted server (e.g. Vercel) the datacenter IP may be blocked, " +
+      "so resolving via the official API with a valid OAuth token is preferred."
+    );
+  }
+  if (response.status === 404) {
+    return `${base}. Check that the profile/user id exists.`;
+  }
+  if (response.status === 401) {
+    return `${base}. The osu! token is missing or expired; log in again.`;
+  }
+  if (response.status === 429) {
+    return `${base}. Rate limited by osu!; wait a minute and retry.`;
+  }
+  return base;
+}
+
+async function fetchWithTransientRetry(url, options, attempts = 3) {
+  // Cloudflare intermittently 403s web routes; a short backoff often clears it.
+  let lastResponse = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const response = await fetchWithTimeout(url, options);
+    if (response.ok) {
+      return response;
+    }
+    lastResponse = response;
+    if ((response.status === 403 || response.status === 429) && attempt < attempts) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
+      continue;
+    }
+    return response;
+  }
+  return lastResponse;
+}
+
 async function fetchText(url) {
-  const response = await fetchWithTimeout(url, {
+  const response = await fetchWithTransientRetry(url, {
     headers: {
       "user-agent": DEFAULT_USER_AGENT,
       accept: "text/html,application/json;q=0.9,*/*;q=0.8",
@@ -216,7 +255,7 @@ async function fetchText(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status} ${response.statusText}) for ${url}`);
+    throw new Error(describeFetchError(response, url));
   }
 
   return {
@@ -226,7 +265,7 @@ async function fetchText(url) {
 }
 
 async function fetchJson(url) {
-  const response = await fetchWithTimeout(url, {
+  const response = await fetchWithTransientRetry(url, {
     headers: {
       "user-agent": DEFAULT_USER_AGENT,
       accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
@@ -235,7 +274,7 @@ async function fetchJson(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status} ${response.statusText}) for ${url}`);
+    throw new Error(describeFetchError(response, url));
   }
 
   return response.json();
@@ -251,10 +290,35 @@ async function fetchApiJson(url, accessToken) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status} ${response.statusText}) for ${url}`);
+    throw new Error(describeFetchError(response, url));
   }
 
   return response.json();
+}
+
+async function resolveUserViaApi(target, accessToken) {
+  const directId = extractUserId(target);
+  let apiPath = null;
+  if (directId) {
+    apiPath = directId;
+  } else {
+    const trimmed = String(target || "").trim();
+    // Since 2024-07-30 the `key` param is deprecated: prefix username with @.
+    apiPath = `@${trimmed.replace(/^@/, "")}`;
+  }
+  const url = `https://osu.ppy.sh/api/v2/users/${encodeURIComponent(apiPath)}`;
+  const data = await fetchApiJson(url, accessToken);
+  const id = data?.id == null ? null : String(data.id);
+  if (!id) {
+    throw new Error("Could not resolve a numeric osu! user id from the provided profile.");
+  }
+  return {
+    id,
+    requestedProfile: target,
+    resolvedProfileUrl: `https://osu.ppy.sh/users/${id}`,
+    username: data?.username || null,
+    profileTitle: data?.username || null,
+  };
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
@@ -316,12 +380,35 @@ function decodeHtml(value) {
 }
 
 async function resolveUser(target) {
+  // Prefer the official API (stable, works with OAuth token) over scraping
+  // the profile HTML, which Cloudflare may 403 from datacenter IPs.
+  const accessToken = process.env.OSU_ACCESS_TOKEN?.trim();
+  if (accessToken) {
+    try {
+      return await resolveUserViaApi(target, accessToken);
+    } catch (error) {
+      console.error(`API user lookup failed (${error.message}); falling back to profile page.`);
+    }
+  }
+
   const directId = extractUserId(target);
+  if (directId) {
+    // Numeric id (or profile URL containing one) needs no network lookup.
+    // This avoids the profile-HTML scrape that Cloudflare intermittently 403s.
+    // (API lookup above already had a chance to enrich with the username.)
+    return {
+      id: directId,
+      requestedProfile: target,
+      resolvedProfileUrl: `https://osu.ppy.sh/users/${directId}`,
+      username: null,
+      profileTitle: null,
+    };
+  }
+
   const profileUrl = profileUrlFor(target);
   const profile = await fetchText(profileUrl);
   const title = extractTitle(profile.text);
   const resolvedId =
-    directId ||
     extractUserId(profile.url) ||
     profile.text.match(/https:\/\/osu\.ppy\.sh\/users\/(\d+)(?:\/|["'<])/i)?.[1] ||
     profile.text.match(/"id":\s*(\d+)\s*,\s*"username"/)?.[1];
