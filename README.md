@@ -25,9 +25,7 @@ Optional: `OSU_ACCESS_TOKEN` for script runs without a browser session.
 
 In the Vercel project: **Root Directory** = empty (repository root, **not** `public/`). **Framework Preset** = Other, **Build Command** = empty. **Do not** add a root `index.mjs` / `server.mjs` app entry — on Vercel those can take over `/` and hide `public/index.html`. The repo includes `src/index.mjs` + `package.json` `"main"` only so the build finds a Node entry; it is not the web app. The UI is served from **`public/`**; APIs are **`api/*`**. Local dev: `npm start` → `scripts/local-server.mjs`.
 
-Add an Upstash/Vercel KV Redis REST URL and token so settings persist, set the same OAuth vars, and register callback `https://<your-app>.vercel.app/auth/osu/callback`. `PUBLIC_BASE_URL=https://<your-app>.vercel.app` is recommended for stable OAuth redirects behind proxies. Redeploy after env changes.
-
-Hosted note: osu! access and refresh tokens are stored server-side with the session settings. Only use a hosted deployment if you trust its operator and storage.
+Add **`BLOB_READ_WRITE_TOKEN`** (Vercel Blob) so settings persist, set the same OAuth vars, and register callback `https://<your-app>.vercel.app/auth/osu/callback`. Redeploy after env changes.
 
 ## CLI
 
