@@ -5,6 +5,10 @@ const DEFAULT_FEEDS = ["firsts", "best", "recent"];
 const DEFAULT_USER_AGENT =
   "osu-scripts/1.0 (+https://github.com/fax1015/osu-scripts; Node.js)";
 const FETCH_TIMEOUT_MS = 15_000;
+// Official API calls get a longer budget: Cloudflare can stall them and a
+// single 15s abort used to knock runs down to limited fallbacks.
+const API_TIMEOUT_MS = 30_000;
+const API_ATTEMPTS = 3;
 const RULESET_TO_MODE = {
   0: "osu",
   1: "taiko",
@@ -202,6 +206,49 @@ function describeFetchError(response, url) {
   return base;
 }
 
+function friendlyAbortMessage(error) {
+  if (error?.name === "AbortError") {
+    return "request timed out";
+  }
+  return error?.message || String(error);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientFetchError(error) {
+  return (
+    error?.name === "AbortError" ||
+    ["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ENOTFOUND"].includes(error?.code)
+  );
+}
+
+async function fetchApiWithRetry(url, options, attempts = API_ATTEMPTS, timeoutMs = API_TIMEOUT_MS) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, options, timeoutMs);
+      if (response.ok) {
+        return response;
+      }
+      if ((response.status === 429 || response.status >= 500) && attempt < attempts) {
+        await sleep(attempt * 2000);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts && isTransientFetchError(error)) {
+        await sleep(attempt * 2000);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
 async function fetchApiJson(url) {
   const headers = {
     "user-agent": DEFAULT_USER_AGENT,
@@ -210,7 +257,7 @@ async function fetchApiJson(url) {
   if (ACCESS_TOKEN) {
     headers.authorization = `Bearer ${ACCESS_TOKEN}`;
   }
-  const response = await fetchWithTimeout(url, { headers });
+  const response = await fetchApiWithRetry(url, { headers });
 
   if (!response.ok) {
     throw new Error(describeFetchError(response, url));
@@ -343,7 +390,11 @@ async function resolveUser(target) {
     try {
       return await resolveUserViaApi(target);
     } catch (error) {
-      console.error(`API user lookup failed (${error.message}); falling back to profile page.`);
+      // Numeric ids don't need the API at all (enrichment only), so a failed
+      // lookup here is silent; the id short-circuit below handles it.
+      if (!extractUserId(target)) {
+        console.error(`API user lookup failed (${friendlyAbortMessage(error)}); falling back to profile page.`);
+      }
     }
   }
 
