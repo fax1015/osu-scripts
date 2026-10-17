@@ -767,12 +767,10 @@ a.btn:active {
     position: relative;
   }
 
+  /* The map preview sits behind the text and gets in the way on phones;
+     preview-init.js also stops rendering while it is hidden */
   .hero-right {
-    width: 100%;
-    justify-content: center;
-    margin-top: -120px;
-    z-index: 10;
-    opacity: 0.6;
+    display: none;
   }
 
   .title {
@@ -935,14 +933,13 @@ body.is-signed-in .nav-lock-badge {
 /* Tool Tiles (Vertical stack in Hero Left) */
 .tool-list-container {
   position: relative;
-  width: 90%;
+  width: 100%;
 }
 
 .tool-tile-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  padding-right: 4px;
   padding-top: 4px;
   padding-bottom: 4px;
 }
@@ -971,10 +968,11 @@ body.is-signed-in .nav-lock-badge {
 }
 
 .tool-tile {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  padding: 12px 16px;
   background: rgba(13, 15, 18, 0.4);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -1003,9 +1001,9 @@ body.is-signed-in .nav-lock-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
@@ -1014,7 +1012,7 @@ body.is-signed-in .nav-lock-badge {
 }
 
 .tool-tile-icon-wrap .material-symbols-rounded {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
 }
 
 .tool-tile:hover .tool-tile-icon-wrap {
@@ -1023,9 +1021,11 @@ body.is-signed-in .nav-lock-badge {
   color: var(--text-pink);
 }
 
+/* Leaves just enough room for the overlaid hover chevron */
 .tool-tile-info {
   flex-grow: 1;
   min-width: 0;
+  padding-right: 6px;
 }
 
 .tool-tile-header {
@@ -1033,12 +1033,13 @@ body.is-signed-in .nav-lock-badge {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 
 .tool-tile-name {
   font-size: 0.88rem;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--text-main);
   transition: color 0.15s ease;
 }
@@ -1082,9 +1083,10 @@ body.is-signed-in .nav-lock-badge {
 .tool-tile-desc {
   font-size: 0.74rem;
   color: var(--text-light);
-  line-height: 1.3;
+  line-height: 1.35;
   margin: 0;
   white-space: normal;
+  text-wrap: pretty;
   text-align: left;
   transition: color 0.15s ease;
 }
@@ -1093,14 +1095,19 @@ body.is-signed-in .nav-lock-badge {
   color: var(--text-muted);
 }
 
+/* Overlaid instead of in the flex row, so the hidden chevron doesn't
+   reserve empty space on the right and push the content off-center */
 .tool-tile-arrow {
+  position: absolute;
+  top: 50%;
+  right: 4px;
   display: flex;
   align-items: center;
   color: var(--text-light);
   opacity: 0;
-  transform: translateX(-4px);
+  transform: translate(-4px, -50%);
   transition: all 0.15s ease;
-  flex-shrink: 0;
+  pointer-events: none;
 }
 
 .tool-tile-arrow .material-symbols-rounded {
@@ -1109,7 +1116,7 @@ body.is-signed-in .nav-lock-badge {
 
 .tool-tile:hover .tool-tile-arrow {
   opacity: 0.8;
-  transform: translateX(0);
+  transform: translate(0, -50%);
   color: var(--text-pink);
 }
 
@@ -1181,14 +1188,6 @@ body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-d
   margin-right: -22vw;
   z-index: 0;
   flex-shrink: 0;
-}
-
-@media (max-width: 720px) {
-  .map-preview-popup {
-    max-width: 100%;
-    margin-top: -250px;
-    margin-right: 0;
-  }
 }
 
 .map-preview-canvas-wrap {
@@ -1431,12 +1430,13 @@ body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-d
     margin-right: auto;
   }
 
+  /* Burger leads the bar (menu on the left, account on the right) */
   .nav-inner {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    grid-template-areas: "logo burger actions";
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "burger logo actions";
     align-items: center;
-    column-gap: 6px;
+    column-gap: 10px;
     row-gap: 0;
     position: relative;
   }
@@ -1449,7 +1449,7 @@ body:not(.is-signed-in) .tool-tile[data-requires-auth="true"]:hover .tool-tile-d
   .nav-burger {
     display: inline-flex;
     grid-area: burger;
-    justify-self: end;
+    justify-self: start;
     align-self: center;
   }
 

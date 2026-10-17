@@ -711,7 +711,7 @@ function applySettings(settings) {
   if (guestForm) {
     guestForm.querySelector("#guest-target").value = g.target || "";
 
-    const sortVal = g.sort || "beatmap-id";
+    const sortVal = g.sort || "last-updated";
     guestForm.querySelector("#guest-sort").value = sortVal;
     const sortOpt = document.querySelector(`.sort-option[data-value="${sortVal}"]`);
     if (sortOpt && document.getElementById("guest-sort-display")) {

@@ -16,6 +16,12 @@ const FETCH_TIMEOUT_MS = 15_000;
 const API_TIMEOUT_MS = 30_000;
 const API_ATTEMPTS = 3;
 const MODES = ["osu", "taiko", "fruits", "mania"];
+const SORTS = ["last-updated", "beatmap-id", "beatmap-status"];
+const DEFAULT_SORT = "last-updated";
+// Old --sort name, still accepted so existing scripts keep working
+const LEGACY_SORTS = { "difficulty-updated": "last-updated" };
+// Order for --sort=beatmap-status; "approved" counts as ranked, unknown goes last
+const STATUS_ORDER = ["ranked", "qualified", "loved", "pending", "wip", "graveyard"];
 const STATUS_TAGS = {
   approved: { label: "Ranked", color: "#b7f36b" },
   graveyard: { label: "Graveyard", color: "#808080" },
@@ -32,7 +38,9 @@ function printHelp() {
 Options:
   --output=./guest-difficulties.txt   BBCode file to write, or "-" for no file (BBCode only in --json). Default: ${DEFAULT_OUTPUT}
   --modes=osu,taiko,fruits,mania      Only include these modes. Default: all
-  --sort=beatmap-id                   Sort: beatmap-id, difficulty-updated, set-date. Default: beatmap-id
+  --sort=last-updated                 Sort: last-updated (set last uploaded), beatmap-id (newest
+                                      difficulty first), beatmap-status (ranked > qualified > loved >
+                                      pending > wip > graveyard). Default: ${DEFAULT_SORT}
   --page-size=100                     Beatmapsets per request. Default: ${DEFAULT_PAGE_SIZE}
   --concurrency=6                     Full detail requests to run at once. Default: ${DEFAULT_CONCURRENCY}
   --max-pages=0                       Stop after N pages. 0 = no limit
@@ -68,7 +76,7 @@ function parseArgs(argv) {
     concurrency: DEFAULT_CONCURRENCY,
     maxPages: 0,
     modes: [...MODES],
-    sort: "beatmap-id",
+    sort: DEFAULT_SORT,
     dryRun: false,
     verbose: false,
     json: false,
@@ -129,7 +137,8 @@ function parseArgs(argv) {
     }
 
     if (arg.startsWith("--sort=")) {
-      options.sort = arg.slice("--sort=".length).trim();
+      const sort = arg.slice("--sort=".length).trim();
+      options.sort = LEGACY_SORTS[sort] || sort;
       continue;
     }
 
@@ -206,8 +215,8 @@ function validateOptions(options) {
     throw new Error("--max-pages must be 0 or a positive integer");
   }
 
-  if (!["beatmap-id", "difficulty-updated", "set-date"].includes(options.sort)) {
-    throw new Error("--sort must be one of: beatmap-id, difficulty-updated, set-date");
+  if (!SORTS.includes(options.sort)) {
+    throw new Error(`--sort must be one of: ${SORTS.join(", ")}`);
   }
 }
 
@@ -748,8 +757,9 @@ function collectGuestDifficulties(beatmapsets, user, options) {
       }
       seenBeatmaps.add(String(beatmap.id));
 
-      const difficultyUpdatedAt = beatmap.last_updated || null;
-      const setDate = beatmapset.ranked_date || beatmapset.submitted_date || beatmapset.last_updated || null;
+      // osu! re-stamps every difficulty's last_updated whenever the set is
+      // uploaded, so the set's own timestamp is the reliable "updated" date.
+      const date = beatmapset.last_updated || beatmap.last_updated || null;
       difficulties.push({
         artist: beatmapset.artist || beatmapset.artist_unicode || "Unknown Artist",
         title: beatmapset.title || beatmapset.title_unicode || "Unknown Title",
@@ -759,10 +769,8 @@ function collectGuestDifficulties(beatmapsets, user, options) {
         mode: beatmap.mode,
         status: beatmapset.status || beatmap.status || null,
         version: beatmap.version || "Unknown difficulty",
-        difficultyUpdatedAt,
-        setDate,
-        date: difficultyUpdatedAt || setDate,
-        year: yearForDate(difficultyUpdatedAt || setDate),
+        date,
+        year: yearForDate(date),
         url: `https://osu.ppy.sh/beatmapsets/${beatmapset.id}#${beatmap.mode}/${beatmap.id}`,
       });
     }
@@ -804,16 +812,29 @@ function yearForDate(value) {
   return String(date.getUTCFullYear());
 }
 
+function statusRank(status) {
+  const key = String(status || "").toLowerCase();
+  const index = STATUS_ORDER.indexOf(key === "approved" ? "ranked" : key);
+  return index === -1 ? STATUS_ORDER.length : index;
+}
+
 function compareDifficulties(a, b, sort) {
+  // Beatmap IDs are handed out when a difficulty is first uploaded, so a higher
+  // ID means the difficulty was added more recently.
   if (sort === "beatmap-id") {
     return String(b.beatmapId).localeCompare(String(a.beatmapId), undefined, { numeric: true });
   }
 
-  const dateKey = sort === "set-date" ? "setDate" : "difficultyUpdatedAt";
-  const aDate = a[dateKey] || a.date;
-  const bDate = b[dateKey] || b.date;
-  const aTime = aDate ? new Date(aDate).getTime() : 0;
-  const bTime = bDate ? new Date(bDate).getTime() : 0;
+  // Same status falls through to last updated
+  if (sort === "beatmap-status") {
+    const rankDiff = statusRank(a.status) - statusRank(b.status);
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+  }
+
+  const aTime = a.date ? new Date(a.date).getTime() : 0;
+  const bTime = b.date ? new Date(b.date).getTime() : 0;
 
   if (aTime !== bTime) {
     return bTime - aTime;

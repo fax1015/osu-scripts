@@ -3043,8 +3043,15 @@ if (playfieldCanvas) {
     renderer = new PreviewRenderer(playfieldCanvas, null);
 }
 
+// The preview is hidden at phone widths (style.css), so don't render or fetch maps there
+const previewHiddenQuery = window.matchMedia('(max-width: 720px)');
+
 const renderFrame = () => {
     if (!renderer) return;
+    if (previewHiddenQuery.matches) {
+        state.rafId = null;
+        return;
+    }
     const now = performance.now();
     state.currentTimeMs = (now - state.playStartPerfMs);
     
@@ -3142,6 +3149,7 @@ const preloadNextMap = async () => {
 };
 
 const loadRandomMap = async () => {
+    if (previewHiddenQuery.matches) return;
     try {
         if (state.rafId) cancelAnimationFrame(state.rafId);
         
@@ -3178,7 +3186,7 @@ const loadRandomMap = async () => {
             const m = data.metadata || {};
             elTitle.textContent = m.title || '';
             elDiff.textContent = m.version || '';
-            elMapper.textContent = m.creator ? `Mapper: ${m.creator}` : '';
+            elMapper.textContent = m.creator ? `mapper: ${m.creator}` : '';
             elLink.href = getOsuBeatmapPageUrl(m);
             elLink.setAttribute(
                 'aria-label',
@@ -3195,6 +3203,8 @@ const loadRandomMap = async () => {
         state.playbackAnchorMs = startTime;
         state.playStartPerfMs = performance.now() - startTime;
         state.currentTimeMs = startTime;
+        // Another load may have finished while this one awaited; keep a single loop
+        if (state.rafId) cancelAnimationFrame(state.rafId);
         state.rafId = requestAnimationFrame(renderFrame);
 
         preloadNextMap();
@@ -3207,6 +3217,10 @@ const loadRandomMap = async () => {
 
 if (playfieldCanvas) {
     loadRandomMap();
+    // Start (or restart with a fresh map) when the window grows past phone width
+    previewHiddenQuery.addEventListener('change', () => {
+        if (!previewHiddenQuery.matches && !state.rafId) loadRandomMap();
+    });
 }
 
 
